@@ -1,8 +1,8 @@
 #define BENCHMARK "OSU MPI Init Test"
 #ifdef PACKAGE_VERSION
-#   define HEADER "# " BENCHMARK " v" PACKAGE_VERSION "\n"
+#define HEADER "# " BENCHMARK " v" PACKAGE_VERSION "\n"
 #else
-#   define HEADER "# " BENCHMARK "\n"
+#define HEADER "# " BENCHMARK "\n"
 #endif
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
@@ -18,8 +18,7 @@
 #include <stdio.h>
 #include <time.h>
 
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int myid, numprocs;
     struct timespec tp_before, tp_after;
@@ -38,9 +37,9 @@ main (int argc, char *argv[])
     MPI_Reduce(&duration, &min, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
     MPI_Reduce(&duration, &max, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&duration, &avg, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    avg = avg/numprocs;
+    avg = avg / numprocs;
 
-    if(myid == 0) {
+    if (myid == 0) {
         fprintf(stdout, HEADER);
         fprintf(stdout, "nprocs: %d, min: %ld ms, max: %ld ms, avg: %ld ms\n",
                 numprocs, min, max, avg);
@@ -51,4 +50,3 @@ main (int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-

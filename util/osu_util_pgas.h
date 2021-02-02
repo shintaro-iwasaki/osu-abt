@@ -14,11 +14,13 @@
 #define UPC_SKIP_SMALL 200
 #define UPC_SKIP_LARGE 10
 
-#define MYBUFSIZE_MR (MAX_MESSAGE_SIZE * OSHM_LOOP_LARGE_MR + MESSAGE_ALIGNMENT_MR)
+#define MYBUFSIZE_MR                                                           \
+    (MAX_MESSAGE_SIZE * OSHM_LOOP_LARGE_MR + MESSAGE_ALIGNMENT_MR)
 #define SYNC_MODE (UPC_IN_ALLSYNC | UPC_OUT_ALLSYNC)
 
 void usage_oshm_pt2pt(int myid);
-void print_header_pgas (const char *header, int rank, int full);
-void print_data_pgas (int rank, int full, int size, double avg_time, double min_time, double max_time, int iterations);
-void print_usage_pgas(int rank, const char * prog, int has_size);
+void print_header_pgas(const char *header, int rank, int full);
+void print_data_pgas(int rank, int full, int size, double avg_time,
+                     double min_time, double max_time, int iterations);
+void print_usage_pgas(int rank, const char *prog, int has_size);
 void print_version_pgas(const char *header);

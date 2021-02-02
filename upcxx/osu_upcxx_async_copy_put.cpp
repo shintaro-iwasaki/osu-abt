@@ -19,14 +19,13 @@ using namespace upcxx;
 int skip = 1000;
 int loop = 10000;
 
-int
-main (int argc, char **argv)
+int main(int argc, char **argv)
 {
     init(&argc, &argv);
 
-    int iters=0;
+    int iters = 0;
     double t_start, t_end;
-    int peerid = (myrank() + ranks()/2) % ranks();
+    int peerid = (myrank() + ranks() / 2) % ranks();
     int iamsender = 0;
     int i;
 
@@ -37,19 +36,20 @@ main (int argc, char **argv)
         return 0;
     }
 
-    if (myrank() < ranks()/2) {
+    if (myrank() < ranks() / 2) {
         iamsender = 1;
     }
 
     /*
      * a shared array of global pointers.
      */
-    shared_array<global_ptr<char>, 1> data_ptrs (ranks());
+    shared_array<global_ptr<char>, 1> data_ptrs(ranks());
 
     /*
      * allocate memory to each global pointer.
      */
-    data_ptrs[myrank()] = allocate<char>(myrank(), sizeof(char) * MAX_MESSAGE_SIZE);
+    data_ptrs[myrank()] =
+        allocate<char>(myrank(), sizeof(char) * MAX_MESSAGE_SIZE);
 
     /*
      * put a barrier since allocate is non-blocking in upc++
@@ -70,20 +70,19 @@ main (int argc, char **argv)
 
     if (!myrank()) {
         fprintf(stdout, HEADER);
-        fprintf(stdout, "# [ pairs: %d ]\n", ranks()/2);
-        fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH,
-                "Latency (us)");
+        fprintf(stdout, "# [ pairs: %d ]\n", ranks() / 2);
+        fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH, "Latency (us)");
         fflush(stdout);
     }
 
-    for (int size = 1; size <= MAX_MESSAGE_SIZE; size*=2) {
+    for (int size = 1; size <= MAX_MESSAGE_SIZE; size *= 2) {
         if (iamsender) {
-            for(i = 0; i < size; i++) {
+            for (i = 0; i < size; i++) {
                 char *lptr = (char *)local;
                 lptr[i] = 'a';
             }
         } else {
-            for(i = 0; i < size; i++) {
+            for (i = 0; i < size; i++) {
                 char *lptr = (char *)local;
                 lptr[i] = 'b';
             }
@@ -98,7 +97,7 @@ main (int argc, char **argv)
 
         if (iamsender) {
             for (i = 0; i < loop + skip; i++) {
-                if(i == skip) {
+                if (i == skip) {
                     barrier();
                     t_start = getMicrosecondTimeStamp();
                 }
@@ -112,7 +111,7 @@ main (int argc, char **argv)
             t_end = getMicrosecondTimeStamp();
 
             if (!myrank()) {
-                double latency = (t_end - t_start)/(1.0 * loop);
+                double latency = (t_end - t_start) / (1.0 * loop);
                 fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH,
                         FLOAT_PRECISION, latency);
                 fflush(stdout);
@@ -130,8 +129,8 @@ main (int argc, char **argv)
              */
             char *lptr = (char *)local;
             for (int i = 0; i < MIN(20, MAX_MESSAGE_SIZE); i++) {
-                printf ("sender_rank():%d --- lptr[%d]=%c , rptr[%d]=%c \n",
-                        myrank(), i, lptr[i], i, (char)remote[i]);
+                printf("sender_rank():%d --- lptr[%d]=%c , rptr[%d]=%c \n",
+                       myrank(), i, lptr[i], i, (char)remote[i]);
             }
         }
     }

@@ -35,116 +35,114 @@
 #endif
 
 #ifndef MIN
-#define MIN(a,b) ((a)<(b)?(a):(b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #ifndef MAX
-#define MAX(a,b) ((a)>(b)?(a):(b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 #ifdef _ENABLE_OPENACC_
-#   define OPENACC_ENABLED 1
-#   include <openacc.h>
+#define OPENACC_ENABLED 1
+#include <openacc.h>
 #else
-#   define OPENACC_ENABLED 0
+#define OPENACC_ENABLED 0
 #endif
 
 #ifdef _ENABLE_CUDA_
-#   define CUDA_ENABLED 1
+#define CUDA_ENABLED 1
 #else
-#   define CUDA_ENABLED 0
+#define CUDA_ENABLED 0
 #endif
 
 #ifdef _ENABLE_CUDA_KERNEL_
-#   define CUDA_KERNEL_ENABLED 1
+#define CUDA_KERNEL_ENABLED 1
 #else
-#   define CUDA_KERNEL_ENABLED 0
+#define CUDA_KERNEL_ENABLED 0
 #endif
 
 #ifdef _ENABLE_ROCM_
-#   define ROCM_ENABLED 1
-#   include "hip/hip_runtime.h"
+#define ROCM_ENABLED 1
+#include "hip/hip_runtime.h"
 #else
-#   define ROCM_ENABLED 0
+#define ROCM_ENABLED 0
 #endif
 
 #ifndef BENCHMARK
-#   define BENCHMARK "MPI%s BENCHMARK NAME UNSET"
+#define BENCHMARK "MPI%s BENCHMARK NAME UNSET"
 #endif
 
 #ifdef PACKAGE_VERSION
-#   define HEADER "# " BENCHMARK " v" PACKAGE_VERSION "\n"
+#define HEADER "# " BENCHMARK " v" PACKAGE_VERSION "\n"
 #else
-#   define HEADER "# " BENCHMARK "\n"
+#define HEADER "# " BENCHMARK "\n"
 #endif
 
 #ifndef FIELD_WIDTH
-#   define FIELD_WIDTH 20
+#define FIELD_WIDTH 20
 #endif
 
 #ifndef FLOAT_PRECISION
-#   define FLOAT_PRECISION 2
+#define FLOAT_PRECISION 2
 #endif
 
-#define CHECK(stmt)                                              \
-do {                                                             \
-   int errno = (stmt);                                           \
-   if (0 != errno) {                                             \
-       fprintf(stderr, "[%s:%d] function call failed with %d \n",\
-        __FILE__, __LINE__, errno);                              \
-       exit(EXIT_FAILURE);                                       \
-   }                                                             \
-   assert(0 == errno);                                           \
-} while (0)
+#define CHECK(stmt)                                                            \
+    do {                                                                       \
+        int errno = (stmt);                                                    \
+        if (0 != errno) {                                                      \
+            fprintf(stderr, "[%s:%d] function call failed with %d \n",         \
+                    __FILE__, __LINE__, errno);                                \
+            exit(EXIT_FAILURE);                                                \
+        }                                                                      \
+        assert(0 == errno);                                                    \
+    } while (0)
 
 #if defined(_ENABLE_CUDA_)
-#define CUDA_CHECK(stmt)                                                \
-do {                                                                    \
-   int errno = (stmt);                                                  \
-   if (0 != errno) {                                                    \
-       fprintf(stderr, "[%s:%d] CUDA call '%s' failed with %d: %s \n",  \
-        __FILE__, __LINE__, #stmt, errno, cudaGetErrorString(errno));   \
-       exit(EXIT_FAILURE);                                              \
-   }                                                                    \
-   assert(cudaSuccess == errno);                                        \
-} while (0)
+#define CUDA_CHECK(stmt)                                                       \
+    do {                                                                       \
+        int errno = (stmt);                                                    \
+        if (0 != errno) {                                                      \
+            fprintf(stderr, "[%s:%d] CUDA call '%s' failed with %d: %s \n",    \
+                    __FILE__, __LINE__, #stmt, errno,                          \
+                    cudaGetErrorString(errno));                                \
+            exit(EXIT_FAILURE);                                                \
+        }                                                                      \
+        assert(cudaSuccess == errno);                                          \
+    } while (0)
 #endif
 
 #if defined(_ENABLE_ROCM_)
-#define ROCM_CHECK(stmt)                                                \
-do {                                                                    \
-   hipError_t errno = (stmt);                                           \
-   if (0 != errno) {                                                    \
-       fprintf(stderr, "[%s:%d] ROCM call '%s' failed with %d: %s \n",  \
-        __FILE__, __LINE__, #stmt, errno, hipGetErrorString(errno));    \
-       exit(EXIT_FAILURE);                                              \
-   }                                                                    \
-   assert(hipSuccess == errno);                                         \
-} while (0)
+#define ROCM_CHECK(stmt)                                                       \
+    do {                                                                       \
+        hipError_t errno = (stmt);                                             \
+        if (0 != errno) {                                                      \
+            fprintf(stderr, "[%s:%d] ROCM call '%s' failed with %d: %s \n",    \
+                    __FILE__, __LINE__, #stmt, errno,                          \
+                    hipGetErrorString(errno));                                 \
+            exit(EXIT_FAILURE);                                                \
+        }                                                                      \
+        assert(hipSuccess == errno);                                           \
+    } while (0)
 #endif
 
 #define TIME() getMicrosecondTimeStamp()
 double getMicrosecondTimeStamp();
 
-void print_header_coll (int rank, int full) __attribute__((unused));
-void print_header_nbc (int rank, int full);
-void print_data (int rank, int full, int size, double avg_time, double
-min_time, double max_time, int iterations) __attribute__((unused));
-void print_data_nbc (int rank, int full, int size, double ovrl, double
-cpu, double comm, double wait, double init, int iterations);
+void print_header_coll(int rank, int full) __attribute__((unused));
+void print_header_nbc(int rank, int full);
+void print_data(int rank, int full, int size, double avg_time, double min_time,
+                double max_time, int iterations) __attribute__((unused));
+void print_data_nbc(int rank, int full, int size, double ovrl, double cpu,
+                    double comm, double wait, double init, int iterations);
 
 void allocate_host_arrays();
 
-void
-calculate_and_print_stats(int rank, int size, int numprocs,
-                          double timer, double latency,
-                          double test_time, double cpu_time,
-                          double wait_time, double init_time);
+void calculate_and_print_stats(int rank, int size, int numprocs, double timer,
+                               double latency, double test_time,
+                               double cpu_time, double wait_time,
+                               double init_time);
 
-
-enum mpi_req{
-    MAX_REQ_NUM = 1000
-};
+enum mpi_req { MAX_REQ_NUM = 1000 };
 
 #define BW_LOOP_SMALL 100
 #define BW_SKIP_SMALL 10
@@ -167,19 +165,19 @@ enum mpi_req{
 #define OSHM_LOOP_ATOMIC 500
 
 #define MAX_MESSAGE_SIZE (1 << 22)
-#define MAX_MSG_SIZE_PT2PT (1<<20)
-#define MAX_MSG_SIZE_COLL (1<<20)
+#define MAX_MSG_SIZE_PT2PT (1 << 20)
+#define MAX_MSG_SIZE_COLL (1 << 20)
 #define MIN_MESSAGE_SIZE 1
 #define LARGE_MESSAGE_SIZE 8192
 
 #define MAX_ALIGNMENT 65536
-#define MAX_MEM_LIMIT (512*1024*1024)
-#define MAX_MEM_LOWER_LIMIT (1*1024*1024)
+#define MAX_MEM_LIMIT (512 * 1024 * 1024)
+#define MAX_MEM_LOWER_LIMIT (1 * 1024 * 1024)
 #define WINDOW_SIZE_LARGE 64
 #define MYBUFSIZE MAX_MESSAGE_SIZE
 #define ONESBUFSIZE ((MAX_MESSAGE_SIZE * WINDOW_SIZE_LARGE) + MAX_ALIGNMENT)
 #define MESSAGE_ALIGNMENT 64
-#define MESSAGE_ALIGNMENT_MR (1<<12)
+#define MESSAGE_ALIGNMENT_MR (1 << 12)
 
 enum po_ret_type {
     PO_CUDA_NOT_AVAIL,
@@ -190,29 +188,11 @@ enum po_ret_type {
     PO_OKAY,
 };
 
-enum accel_type {
-    NONE,
-    CUDA,
-    OPENACC,
-    MANAGED,
-    ROCM
-};
+enum accel_type { NONE, CUDA, OPENACC, MANAGED, ROCM };
 
-enum target_type {
-    CPU,
-    GPU,
-    BOTH
-};
+enum target_type { CPU, GPU, BOTH };
 
-enum benchmark_type {
-    COLLECTIVE,
-    PT2PT,
-    ONE_SIDED,
-    MBW_MR,
-    OSHM,
-    UPC,
-    UPCXX
-};
+enum benchmark_type { COLLECTIVE, PT2PT, ONE_SIDED, MBW_MR, OSHM, UPC, UPCXX };
 
 enum test_subtype {
     BW,
@@ -222,13 +202,10 @@ enum test_subtype {
     NBC,
 };
 
-enum test_synctype {
-    ALL_SYNC,
-    ACTIVE_SYNC
-};
+enum test_synctype { ALL_SYNC, ACTIVE_SYNC };
 
 enum WINDOW {
-    WIN_CREATE=0,
+    WIN_CREATE = 0,
 #if MPI_VERSION >= 3
     WIN_ALLOCATE,
     WIN_DYNAMIC
@@ -237,7 +214,7 @@ enum WINDOW {
 
 /* Synchronization */
 enum SYNC {
-    LOCK=0,
+    LOCK = 0,
     PSCW,
     FENCE,
 #if MPI_VERSION >= 3
@@ -268,7 +245,7 @@ struct options_t {
     int device_array_size;
 
     enum benchmark_type bench;
-    enum test_subtype  subtype;
+    enum test_subtype subtype;
     enum test_synctype synctype;
 
     char src;
@@ -288,14 +265,14 @@ struct options_t {
     int pairs;
 };
 
-struct bad_usage_t{
-    char const * message;
-    char const * optarg;
+struct bad_usage_t {
+    char const *message;
+    char const *optarg;
     int opt;
 };
 
-extern char const * benchmark_header;
-extern char const * benchmark_name;
+extern char const *benchmark_header;
+extern char const *benchmark_name;
 extern int accel_enabled;
 extern struct options_t options;
 extern struct bad_usage_t bad_usage;
@@ -303,16 +280,16 @@ extern struct bad_usage_t bad_usage;
 /*
  * Option Processing
  */
-extern int process_one_sided_options (int opt, char *arg);
-int process_options (int argc, char *argv[]);
+extern int process_one_sided_options(int opt, char *arg);
+int process_options(int argc, char *argv[]);
 int setAccel(char);
 
 /*
  * Set Benchmark Properties
  */
-void set_header (const char * header);
-void set_benchmark_name (const char * name);
-void enable_accel_support (void);
+void set_header(const char *header);
+void set_benchmark_name(const char *name);
+void enable_accel_support(void);
 
 #define DEF_NUM_THREADS 2
 #define MIN_NUM_THREADS 1
@@ -323,7 +300,10 @@ void enable_accel_support (void);
 #define MAX_NUM_PROCESSES 128
 #define CHILD_SLEEP_SECONDS 2
 
-#define WINDOW_SIZES {1, 2, 4, 8, 16, 32, 64, 128}
-#define WINDOW_SIZES_COUNT   (8)
+#define WINDOW_SIZES                                                           \
+    {                                                                          \
+        1, 2, 4, 8, 16, 32, 64, 128                                            \
+    }
+#define WINDOW_SIZES_COUNT (8)
 
 void wtime(double *t);

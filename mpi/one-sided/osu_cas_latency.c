@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU MPI_Compare_and_swap%s latency Test"
 /*
  * Copyright (C) 2003-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University.            
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -11,21 +11,21 @@
 
 #include <osu_util_mpi.h>
 
-double  t_start = 0.0, t_end = 0.0;
-uint64_t *sbuf=NULL, *tbuf=NULL, *cbuf=NULL, *win_base=NULL;
+double t_start = 0.0, t_end = 0.0;
+uint64_t *sbuf = NULL, *tbuf = NULL, *cbuf = NULL, *win_base = NULL;
 
-void print_latency (int, int);
-void run_cas_with_lock (int, enum WINDOW);
-void run_cas_with_fence (int, enum WINDOW);
-void run_cas_with_lock_all (int, enum WINDOW);
-void run_cas_with_flush (int, enum WINDOW);
-void run_cas_with_flush_local (int, enum WINDOW);
-void run_cas_with_pscw (int, enum WINDOW);
+void print_latency(int, int);
+void run_cas_with_lock(int, enum WINDOW);
+void run_cas_with_fence(int, enum WINDOW);
+void run_cas_with_lock_all(int, enum WINDOW);
+void run_cas_with_flush(int, enum WINDOW);
+void run_cas_with_flush_local(int, enum WINDOW);
+void run_cas_with_pscw(int, enum WINDOW);
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    int         rank,nprocs;
-    int         po_ret = PO_OKAY;
+    int rank, nprocs;
+    int po_ret = PO_OKAY;
 
     options.win = WIN_ALLOCATE;
     options.sync = FLUSH;
@@ -41,7 +41,7 @@ int main (int argc, char *argv[])
 
     if (PO_OKAY == po_ret && NONE != options.accel) {
         if (init_accel()) {
-           fprintf(stderr, "Error initializing device\n");
+            fprintf(stderr, "Error initializing device\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -54,11 +54,11 @@ int main (int argc, char *argv[])
         switch (po_ret) {
             case PO_CUDA_NOT_AVAIL:
                 fprintf(stderr, "CUDA support not enabled.  Please recompile "
-                        "benchmark with CUDA support.\n");
+                                "benchmark with CUDA support.\n");
                 break;
             case PO_OPENACC_NOT_AVAIL:
                 fprintf(stderr, "OPENACC support not enabled.  Please "
-                        "recompile benchmark with OPENACC support.\n");
+                                "recompile benchmark with OPENACC support.\n");
                 break;
             case PO_BAD_USAGE:
                 print_bad_usage_message(rank);
@@ -88,8 +88,8 @@ int main (int argc, char *argv[])
             break;
     }
 
-    if(nprocs != 2) {
-        if(rank == 0) {
+    if (nprocs != 2) {
+        if (rank == 0) {
             fprintf(stderr, "This test requires exactly two processes\n");
         }
         MPI_CHECK(MPI_Finalize());
@@ -98,7 +98,7 @@ int main (int argc, char *argv[])
 
     print_header_one_sided(rank, options.win, options.sync);
 
-    switch (options.sync){
+    switch (options.sync) {
         case LOCK:
             run_cas_with_lock(rank, options.win);
             break;
@@ -108,13 +108,13 @@ int main (int argc, char *argv[])
         case PSCW:
             run_cas_with_pscw(rank, options.win);
             break;
-        case FENCE: 
+        case FENCE:
             run_cas_with_fence(rank, options.win);
             break;
-        case FLUSH_LOCAL: 
+        case FLUSH_LOCAL:
             run_cas_with_flush_local(rank, options.win);
             break;
-        default: 
+        default:
             run_cas_with_flush(rank, options.win);
             break;
     }
@@ -134,60 +134,61 @@ int main (int argc, char *argv[])
 void print_latency(int rank, int size)
 {
     if (rank == 0) {
-        fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH,
-                FLOAT_PRECISION, (t_end - t_start) * 1.0e6 / options.iterations);
+        fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH, FLOAT_PRECISION,
+                (t_end - t_start) * 1.0e6 / options.iterations);
         fflush(stdout);
     }
 }
 
 /*Run CAS with flush */
-void run_cas_with_flush (int rank, enum WINDOW type)
+void run_cas_with_flush(int rank, enum WINDOW type)
 {
     int i;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
-    allocate_atomic_memory(rank, (char **)&sbuf,
-            (char **)&tbuf, (char **) &cbuf, (char **)&win_base,
-            options.max_message_size, type, &win);
+    allocate_atomic_memory(rank, (char **)&sbuf, (char **)&tbuf, (char **)&cbuf,
+                           (char **)&win_base, options.max_message_size, type,
+                           &win);
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-    if(rank == 0) {
+    if (rank == 0) {
         if (type == WIN_DYNAMIC) {
             disp = disp_remote;
         }
         MPI_CHECK(MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win));
         for (i = 0; i < options.skip + options.iterations; i++) {
             if (i == options.skip) {
-                t_start = MPI_Wtime ();
+                t_start = MPI_Wtime();
             }
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1,
+                                           disp, win));
             MPI_CHECK(MPI_Win_flush(1, win));
         }
-        t_end = MPI_Wtime ();
+        t_end = MPI_Wtime();
         MPI_CHECK(MPI_Win_unlock(1, win));
-    }                
+    }
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     print_latency(rank, 8);
 
-    free_atomic_memory (sbuf, win_base, tbuf, cbuf, type, win, rank);
+    free_atomic_memory(sbuf, win_base, tbuf, cbuf, type, win, rank);
 }
 
 /*Run CAS with Lock_all/unlock_all */
-void run_cas_with_lock_all (int rank, enum WINDOW type)
+void run_cas_with_lock_all(int rank, enum WINDOW type)
 {
     int i;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
-    allocate_atomic_memory(rank, (char **)&sbuf,
-            (char **)&tbuf, (char **) &cbuf, (char **)&win_base,
-            options.max_message_size, type, &win);
+    allocate_atomic_memory(rank, (char **)&sbuf, (char **)&tbuf, (char **)&cbuf,
+                           (char **)&win_base, options.max_message_size, type,
+                           &win);
 
-    if(rank == 0) {
+    if (rank == 0) {
 
         if (type == WIN_DYNAMIC) {
             disp = disp_remote;
@@ -195,36 +196,37 @@ void run_cas_with_lock_all (int rank, enum WINDOW type)
 
         for (i = 0; i < options.skip + options.iterations; i++) {
             if (i == options.skip) {
-                t_start = MPI_Wtime ();
+                t_start = MPI_Wtime();
             }
             MPI_CHECK(MPI_Win_lock_all(0, win));
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1,
+                                           disp, win));
             MPI_CHECK(MPI_Win_unlock_all(win));
         }
-        t_end = MPI_Wtime ();
-    }                
+        t_end = MPI_Wtime();
+    }
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     print_latency(rank, 8);
 
-    free_atomic_memory (sbuf, win_base, tbuf, cbuf, type, win, rank);
+    free_atomic_memory(sbuf, win_base, tbuf, cbuf, type, win, rank);
 }
 
 /*Run CAS with flush */
-void run_cas_with_flush_local (int rank, enum WINDOW type)
+void run_cas_with_flush_local(int rank, enum WINDOW type)
 {
     int i;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
-    allocate_atomic_memory(rank, (char **)&sbuf,
-            (char **)&tbuf, (char **) &cbuf, (char **)&win_base,
-            options.max_message_size, type, &win);
+    allocate_atomic_memory(rank, (char **)&sbuf, (char **)&tbuf, (char **)&cbuf,
+                           (char **)&win_base, options.max_message_size, type,
+                           &win);
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-    if(rank == 0) {
+    if (rank == 0) {
 
         if (type == WIN_DYNAMIC) {
             disp = disp_remote;
@@ -232,20 +234,21 @@ void run_cas_with_flush_local (int rank, enum WINDOW type)
         MPI_CHECK(MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win));
         for (i = 0; i < options.skip + options.iterations; i++) {
             if (i == options.skip) {
-                t_start = MPI_Wtime ();
+                t_start = MPI_Wtime();
             }
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1,
+                                           disp, win));
             MPI_CHECK(MPI_Win_flush_local(1, win));
         }
-        t_end = MPI_Wtime ();
+        t_end = MPI_Wtime();
         MPI_CHECK(MPI_Win_unlock(1, win));
-    }                
+    }
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     print_latency(rank, 8);
 
-    free_atomic_memory (sbuf, win_base, tbuf, cbuf, type, win, rank);
+    free_atomic_memory(sbuf, win_base, tbuf, cbuf, type, win, rank);
 }
 
 /*Run CAS with Lock/unlock */
@@ -253,33 +256,34 @@ void run_cas_with_lock(int rank, enum WINDOW type)
 {
     int i;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
-    allocate_atomic_memory(rank, (char **)&sbuf,
-            (char **)&tbuf, (char **) &cbuf, (char **)&win_base,
-            options.max_message_size, type, &win);
+    allocate_atomic_memory(rank, (char **)&sbuf, (char **)&tbuf, (char **)&cbuf,
+                           (char **)&win_base, options.max_message_size, type,
+                           &win);
 
-    if(rank == 0) {
+    if (rank == 0) {
 
         if (type == WIN_DYNAMIC) {
             disp = disp_remote;
         }
         for (i = 0; i < options.skip + options.iterations; i++) {
             if (i == options.skip) {
-                t_start = MPI_Wtime ();
+                t_start = MPI_Wtime();
             }
             MPI_CHECK(MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 1, 0, win));
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1,
+                                           disp, win));
             MPI_CHECK(MPI_Win_unlock(1, win));
         }
-        t_end = MPI_Wtime ();
-    }                
+        t_end = MPI_Wtime();
+    }
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     print_latency(rank, 8);
 
-    free_atomic_memory (sbuf, win_base, tbuf, cbuf, type, win, rank);
+    free_atomic_memory(sbuf, win_base, tbuf, cbuf, type, win, rank);
 }
 
 /*Run CAS with Fence */
@@ -287,33 +291,35 @@ void run_cas_with_fence(int rank, enum WINDOW type)
 {
     int i;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-    allocate_atomic_memory(rank, (char **)&sbuf,
-            (char **)&tbuf, (char **) &cbuf, (char **)&win_base,
-            options.max_message_size, type, &win);
+    allocate_atomic_memory(rank, (char **)&sbuf, (char **)&tbuf, (char **)&cbuf,
+                           (char **)&win_base, options.max_message_size, type,
+                           &win);
 
     if (type == WIN_DYNAMIC) {
         disp = disp_remote;
     }
-    if(rank == 0) {
+    if (rank == 0) {
         for (i = 0; i < options.skip + options.iterations; i++) {
             if (i == options.skip) {
-                t_start = MPI_Wtime ();
+                t_start = MPI_Wtime();
             }
             MPI_CHECK(MPI_Win_fence(0, win));
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1,
+                                           disp, win));
             MPI_CHECK(MPI_Win_fence(0, win));
             MPI_CHECK(MPI_Win_fence(0, win));
         }
-        t_end = MPI_Wtime ();
+        t_end = MPI_Wtime();
     } else {
         for (i = 0; i < options.skip + options.iterations; i++) {
             MPI_CHECK(MPI_Win_fence(0, win));
             MPI_CHECK(MPI_Win_fence(0, win));
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 0, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 0,
+                                           disp, win));
             MPI_CHECK(MPI_Win_fence(0, win));
         }
     }
@@ -321,12 +327,12 @@ void run_cas_with_fence(int rank, enum WINDOW type)
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     if (rank == 0) {
-        fprintf(stdout, "%-*d%*.*f\n", 10, 8, FIELD_WIDTH,
-                FLOAT_PRECISION, (t_end - t_start) * 1.0e6 / options.iterations / 2);
+        fprintf(stdout, "%-*d%*.*f\n", 10, 8, FIELD_WIDTH, FLOAT_PRECISION,
+                (t_end - t_start) * 1.0e6 / options.iterations / 2);
         fflush(stdout);
     }
 
-    free_atomic_memory (sbuf, win_base, tbuf, cbuf, type, win, rank);
+    free_atomic_memory(sbuf, win_base, tbuf, cbuf, type, win, rank);
 }
 
 /*Run CAS with Post/Start/Complete/Wait */
@@ -334,14 +340,14 @@ void run_cas_with_pscw(int rank, enum WINDOW type)
 {
     int destrank, i;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
-    MPI_Group       comm_group, group;
+    MPI_Group comm_group, group;
     MPI_CHECK(MPI_Comm_group(MPI_COMM_WORLD, &comm_group));
 
-    allocate_atomic_memory(rank, (char **)&sbuf,
-            (char **)&tbuf, (char **) &cbuf, (char **)&win_base,
-            options.max_message_size, type, &win);
+    allocate_atomic_memory(rank, (char **)&sbuf, (char **)&tbuf, (char **)&cbuf,
+                           (char **)&win_base, options.max_message_size, type,
+                           &win);
 
     if (type == WIN_DYNAMIC) {
         disp = disp_remote;
@@ -354,19 +360,20 @@ void run_cas_with_pscw(int rank, enum WINDOW type)
         MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
         for (i = 0; i < options.skip + options.iterations; i++) {
-            MPI_CHECK(MPI_Win_start (group, 0, win));
+            MPI_CHECK(MPI_Win_start(group, 0, win));
 
             if (i == options.skip) {
-                t_start = MPI_Wtime ();
+                t_start = MPI_Wtime();
             }
 
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 1,
+                                           disp, win));
             MPI_CHECK(MPI_Win_complete(win));
             MPI_CHECK(MPI_Win_post(group, 0, win));
             MPI_CHECK(MPI_Win_wait(win));
         }
 
-        t_end = MPI_Wtime ();
+        t_end = MPI_Wtime();
     } else {
         /* rank=1 */
         destrank = 0;
@@ -378,7 +385,8 @@ void run_cas_with_pscw(int rank, enum WINDOW type)
             MPI_CHECK(MPI_Win_post(group, 0, win));
             MPI_CHECK(MPI_Win_wait(win));
             MPI_CHECK(MPI_Win_start(group, 0, win));
-            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 0, disp, win));
+            MPI_CHECK(MPI_Compare_and_swap(sbuf, cbuf, tbuf, MPI_LONG_LONG, 0,
+                                           disp, win));
             MPI_CHECK(MPI_Win_complete(win));
         }
     }
@@ -386,14 +394,14 @@ void run_cas_with_pscw(int rank, enum WINDOW type)
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     if (rank == 0) {
-        fprintf(stdout, "%-*d%*.*f\n", 10, 8, FIELD_WIDTH,
-                FLOAT_PRECISION, (t_end - t_start) * 1.0e6 / options.iterations / 2);
+        fprintf(stdout, "%-*d%*.*f\n", 10, 8, FIELD_WIDTH, FLOAT_PRECISION,
+                (t_end - t_start) * 1.0e6 / options.iterations / 2);
         fflush(stdout);
     }
 
     MPI_CHECK(MPI_Group_free(&group));
     MPI_CHECK(MPI_Group_free(&comm_group));
 
-    free_atomic_memory (sbuf, win_base, tbuf, cbuf, type, win, rank);
+    free_atomic_memory(sbuf, win_base, tbuf, cbuf, type, win, rank);
 }
 /* vi: set sw=4 sts=4 tw=80: */

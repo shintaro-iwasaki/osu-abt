@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU UPC Barrier Latency Test"
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University. 
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -13,7 +13,6 @@
 #include <upc_collective.h>
 #include <../util/osu_util_pgas.h>
 
-
 shared double avg_time, max_time, min_time;
 shared double latency[THREADS];
 
@@ -21,7 +20,7 @@ int main(int argc, char *argv[])
 {
     int i = 0;
     int skip, size = 0, iterations;
-    double t_start = 0, t_stop = 0, timer=0;
+    double t_start = 0, t_stop = 0, timer = 0;
     int full = 0;
     int po_ret;
 
@@ -50,27 +49,25 @@ int main(int argc, char *argv[])
             break;
     }
 
-    
-    if(THREADS < 2) {
-        if(MYTHREAD == 0) {
+    if (THREADS < 2) {
+        if (MYTHREAD == 0) {
             fprintf(stderr, "This test requires at least two processes\n");
         }
         return -1;
     }
 
-
     print_header_pgas(HEADER, MYTHREAD, full);
     upc_barrier;
 
-    timer=0;        
-    for(i=0; i < iterations + skip ; i++) {        
+    timer = 0;
+    for (i = 0; i < iterations + skip; i++) {
         t_start = TIME();
         upc_barrier;
         t_stop = TIME();
 
-        if(i>=skip){
-            timer+=t_stop-t_start;
-        } 
+        if (i >= skip) {
+            timer += t_stop - t_start;
+        }
     }
     upc_barrier;
     latency[MYTHREAD] = (1.0 * timer) / iterations;
@@ -78,10 +75,11 @@ int main(int argc, char *argv[])
     upc_all_reduceD(&min_time, latency, UPC_MIN, THREADS, 1, NULL, SYNC_MODE);
     upc_all_reduceD(&max_time, latency, UPC_MAX, THREADS, 1, NULL, SYNC_MODE);
     upc_all_reduceD(&avg_time, latency, UPC_ADD, THREADS, 1, NULL, SYNC_MODE);
-    if(!MYTHREAD)
-        avg_time = avg_time/THREADS;
-    
-    print_data_pgas(MYTHREAD, full, 0, avg_time, min_time, max_time, iterations);
+    if (!MYTHREAD)
+        avg_time = avg_time / THREADS;
+
+    print_data_pgas(MYTHREAD, full, 0, avg_time, min_time, max_time,
+                    iterations);
     upc_barrier;
     return EXIT_SUCCESS;
 }

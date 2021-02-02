@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU OpenSHMEM Put Message Rate Test"
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University. 
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -15,7 +15,7 @@
 char global_msg_buffer[MYBUFSIZE_MR];
 
 #ifndef MEMORY_SELECTION
-#   define MEMORY_SELECTION 1
+#define MEMORY_SELECTION 1
 #endif
 
 struct pe_vars {
@@ -25,29 +25,27 @@ struct pe_vars {
     int nxtpe;
 };
 
-struct pe_vars
-init_openshmem (void)
+struct pe_vars init_openshmem(void)
 {
     struct pe_vars v;
 
 #ifdef OSHM_1_3
-    shmem_init ();
+    shmem_init();
     v.me = shmem_my_pe();
-	v.npes = shmem_n_pes();
+    v.npes = shmem_n_pes();
 #else
-	start_pes(0);	
-	v.me = _my_pe();
+    start_pes(0);
+    v.me = _my_pe();
     v.npes = _num_pes();
 #endif
-    
+
     v.pairs = v.npes / 2;
     v.nxtpe = v.me < v.pairs ? v.me + v.pairs : v.me - v.pairs;
 
     return v;
 }
 
-void
-check_usage (int me, int npes, int argc, char * argv [])
+void check_usage(int me, int npes, int argc, char *argv[])
 {
     if (MEMORY_SELECTION) {
         if (2 == argc) {
@@ -55,8 +53,8 @@ check_usage (int me, int npes, int argc, char * argv [])
              * Compare more than 4 and 6 characters respectively to make sure
              * that we're not simply matching a prefix but the entire string.
              */
-            if (strncmp(argv[1], "heap", 10)
-                && strncmp(argv[1], "global", 10)) {
+            if (strncmp(argv[1], "heap", 10) &&
+                strncmp(argv[1], "global", 10)) {
                 usage_oshm_pt2pt(me);
                 exit(EXIT_FAILURE);
             }
@@ -77,29 +75,29 @@ check_usage (int me, int npes, int argc, char * argv [])
     }
 }
 
-void
-print_header_local (int myid)
+void print_header_local(int myid)
 {
-    if(myid == 0) {
+    if (myid == 0) {
         fprintf(stdout, HEADER);
         fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH, "Messages/s");
         fflush(stdout);
     }
 }
 
-char *
-allocate_memory (int me, long align_size, int use_heap)
+char *allocate_memory(int me, long align_size, int use_heap)
 {
-    char * msg_buffer;
+    char *msg_buffer;
 
     if (!use_heap) {
         return global_msg_buffer;
     }
 
 #ifdef OSHM_1_3
-	msg_buffer = (char *)shmem_malloc(MAX_MESSAGE_SIZE * OSHM_LOOP_LARGE_MR + align_size);
+    msg_buffer = (char *)shmem_malloc(MAX_MESSAGE_SIZE * OSHM_LOOP_LARGE_MR +
+                                      align_size);
 #else
-	msg_buffer = (char *)shmalloc(MAX_MESSAGE_SIZE * OSHM_LOOP_LARGE_MR + align_size);
+    msg_buffer =
+        (char *)shmalloc(MAX_MESSAGE_SIZE * OSHM_LOOP_LARGE_MR + align_size);
 #endif
 
     if (NULL == msg_buffer) {
@@ -110,16 +108,14 @@ allocate_memory (int me, long align_size, int use_heap)
     return msg_buffer;
 }
 
-char *
-align_memory (unsigned long address, int const align_size)
+char *align_memory(unsigned long address, int const align_size)
 {
-    return (char *) ((address + (align_size - 1)) / align_size * align_size);
+    return (char *)((address + (align_size - 1)) / align_size * align_size);
 }
 
-double
-message_rate (struct pe_vars v, char * buffer, int size, int iterations)
+double message_rate(struct pe_vars v, char *buffer, int size, int iterations)
 {
-    double begin, end; 
+    double begin, end;
     int i, offset;
 
     /*
@@ -145,18 +141,16 @@ message_rate (struct pe_vars v, char * buffer, int size, int iterations)
     return 0;
 }
 
-void
-print_message_rate (int myid, int size, double rate)
+void print_message_rate(int myid, int size, double rate)
 {
-    if (myid == 0) { 
+    if (myid == 0) {
         fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH, FLOAT_PRECISION,
                 rate);
         fflush(stdout);
     }
 }
 
-void
-benchmark (struct pe_vars v, char * msg_buffer)
+void benchmark(struct pe_vars v, char *msg_buffer)
 {
     static double pwrk[_SHMEM_REDUCE_MIN_WRKDATA_SIZE];
     static long psync[_SHMEM_REDUCE_SYNC_SIZE];
@@ -169,11 +163,13 @@ benchmark (struct pe_vars v, char * msg_buffer)
      * Warmup
      */
     if (v.me < v.pairs) {
-        for (i = 0; i < (OSHM_LOOP_LARGE_MR * MAX_MESSAGE_SIZE); i += MAX_MESSAGE_SIZE) {
-            shmem_putmem(&msg_buffer[i], &msg_buffer[i], MAX_MESSAGE_SIZE, v.nxtpe);
+        for (i = 0; i < (OSHM_LOOP_LARGE_MR * MAX_MESSAGE_SIZE);
+             i += MAX_MESSAGE_SIZE) {
+            shmem_putmem(&msg_buffer[i], &msg_buffer[i], MAX_MESSAGE_SIZE,
+                         v.nxtpe);
         }
     }
-    
+
     shmem_barrier_all();
 
     /*
@@ -188,11 +184,10 @@ benchmark (struct pe_vars v, char * msg_buffer)
     }
 }
 
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     struct pe_vars v;
-    char * msg_buffer, * aligned_buffer;
+    char *msg_buffer, *aligned_buffer;
     long alignment;
     int use_heap;
 
@@ -224,12 +219,12 @@ main (int argc, char *argv[])
 #ifdef OSHM_1_3
         shmem_free(msg_buffer);
 #else
-		shfree(msg_buffer);
+        shfree(msg_buffer);
 #endif
     }
 
-#ifdef OSHM_1_3  
-    shmem_finalize (); 
+#ifdef OSHM_1_3
+    shmem_finalize();
 #endif
 
     return EXIT_SUCCESS;

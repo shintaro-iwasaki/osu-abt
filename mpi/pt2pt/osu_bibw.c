@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU MPI%s Bi-Directional Bandwidth Test"
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University. 
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
     set_header(HEADER);
     set_benchmark_name("osu_bibw");
-    
+
     po_ret = process_options(argc, argv);
     window_size = options.window_size;
 
@@ -42,11 +42,11 @@ int main(int argc, char *argv[])
         switch (po_ret) {
             case PO_CUDA_NOT_AVAIL:
                 fprintf(stderr, "CUDA support not enabled.  Please recompile "
-                        "benchmark with CUDA support.\n");
+                                "benchmark with CUDA support.\n");
                 break;
             case PO_OPENACC_NOT_AVAIL:
                 fprintf(stderr, "OPENACC support not enabled.  Please "
-                        "recompile benchmark with OPENACC support.\n");
+                                "recompile benchmark with OPENACC support.\n");
                 break;
             case PO_BAD_USAGE:
                 print_bad_usage_message(myid);
@@ -77,8 +77,8 @@ int main(int argc, char *argv[])
             break;
     }
 
-    if(numprocs != 2) {
-        if(myid == 0) {
+    if (numprocs != 2) {
+        if (myid == 0) {
             fprintf(stderr, "This test requires exactly two processes\n");
         }
 
@@ -95,30 +95,31 @@ int main(int argc, char *argv[])
     print_header(myid, BW);
 
     /* Bi-Directional Bandwidth test */
-    for(size = options.min_message_size; size <= options.max_message_size; size *= 2) {
+    for (size = options.min_message_size; size <= options.max_message_size;
+         size *= 2) {
         /* touch the data */
         set_buffer_pt2pt(s_buf, myid, options.accel, 'a', size);
         set_buffer_pt2pt(r_buf, myid, options.accel, 'b', size);
 
-        if(size > LARGE_MESSAGE_SIZE) {
+        if (size > LARGE_MESSAGE_SIZE) {
             options.iterations = options.iterations_large;
             options.skip = options.skip_large;
         }
 
-        if(myid == 0) {
-            for(i = 0; i < options.iterations + options.skip; i++) {
-                if(i == options.skip) {
+        if (myid == 0) {
+            for (i = 0; i < options.iterations + options.skip; i++) {
+                if (i == options.skip) {
                     t_start = MPI_Wtime();
                 }
 
-                for(j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Irecv(r_buf, size, MPI_CHAR, 1, 10, MPI_COMM_WORLD,
-                            recv_request + j));
+                for (j = 0; j < window_size; j++) {
+                    MPI_CHECK(MPI_Irecv(r_buf, size, MPI_CHAR, 1, 10,
+                                        MPI_COMM_WORLD, recv_request + j));
                 }
 
-                for(j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Isend(s_buf, size, MPI_CHAR, 1, 100, MPI_COMM_WORLD,
-                            send_request + j));
+                for (j = 0; j < window_size; j++) {
+                    MPI_CHECK(MPI_Isend(s_buf, size, MPI_CHAR, 1, 100,
+                                        MPI_COMM_WORLD, send_request + j));
                 }
 
                 MPI_CHECK(MPI_Waitall(window_size, send_request, reqstat));
@@ -130,16 +131,16 @@ int main(int argc, char *argv[])
 
         }
 
-        else if(myid == 1) {
-            for(i = 0; i < options.iterations + options.skip; i++) {
-                for(j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Irecv(r_buf, size, MPI_CHAR, 0, 100, MPI_COMM_WORLD,
-                            recv_request + j));
+        else if (myid == 1) {
+            for (i = 0; i < options.iterations + options.skip; i++) {
+                for (j = 0; j < window_size; j++) {
+                    MPI_CHECK(MPI_Irecv(r_buf, size, MPI_CHAR, 0, 100,
+                                        MPI_COMM_WORLD, recv_request + j));
                 }
 
                 for (j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Isend(s_buf, size, MPI_CHAR, 0, 10, MPI_COMM_WORLD,
-                            send_request + j));
+                    MPI_CHECK(MPI_Isend(s_buf, size, MPI_CHAR, 0, 10,
+                                        MPI_COMM_WORLD, send_request + j));
                 }
 
                 MPI_CHECK(MPI_Waitall(window_size, send_request, reqstat));
@@ -147,7 +148,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if(myid == 0) {
+        if (myid == 0) {
             double tmp = size / 1e6 * options.iterations * window_size * 2;
 
             fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH,
@@ -168,5 +169,3 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
-

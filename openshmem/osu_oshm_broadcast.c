@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU OpenSHMEM Broadcast Latency Test"
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University. 
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -26,23 +26,26 @@ int main(int argc, char *argv[])
     int skip, numprocs, iterations;
     static double avg_time = 0.0, max_time = 0.0, min_time = 0.0;
     static double latency = 0.0;
-    double t_start = 0, t_stop = 0, timer=0;
-    char *buffer=NULL;
+    double t_start = 0, t_stop = 0, timer = 0;
+    char *buffer = NULL;
     int max_msg_size = 1048576, full = 0;
     int t;
     int po_ret;
 
     options.bench = OSHM;
-	
-    for ( t = 0; t < _SHMEM_BCAST_SYNC_SIZE; t += 1) pSyncBcast1[t] = _SHMEM_SYNC_VALUE;
-    for ( t = 0; t < _SHMEM_BCAST_SYNC_SIZE; t += 1) pSyncBcast2[t] = _SHMEM_SYNC_VALUE;
-    for ( t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1) pSyncRed1[t] = _SHMEM_SYNC_VALUE;
-    for ( t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1) pSyncRed2[t] = _SHMEM_SYNC_VALUE;
 
+    for (t = 0; t < _SHMEM_BCAST_SYNC_SIZE; t += 1)
+        pSyncBcast1[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_BCAST_SYNC_SIZE; t += 1)
+        pSyncBcast2[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1)
+        pSyncRed1[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1)
+        pSyncRed2[t] = _SHMEM_SYNC_VALUE;
 
 #ifdef OSHM_1_3
     shmem_init();
-    rank = shmem_my_pe(); 
+    rank = shmem_my_pe();
     numprocs = shmem_n_pes();
 #else
     start_pes(0);
@@ -67,9 +70,9 @@ int main(int argc, char *argv[])
         case PO_OKAY:
             break;
     }
-    
-    if(numprocs < 2) {
-        if(rank == 0) {
+
+    if (numprocs < 2) {
+        if (rank == 0) {
             fprintf(stderr, "This test requires at least two processes\n");
         }
         return -1;
@@ -79,62 +82,64 @@ int main(int argc, char *argv[])
     full = options.show_full;
     print_header_pgas(HEADER, rank, full);
 
-
-   
 #ifdef OSHM_1_3
     buffer = (char *)shmem_malloc(max_msg_size * sizeof(char));
 #else
-	 buffer = (char *)shmalloc(max_msg_size * sizeof(char));
+    buffer = (char *)shmalloc(max_msg_size * sizeof(char));
 #endif
 
-    if(NULL == buffer) {
+    if (NULL == buffer) {
         fprintf(stderr, "malloc failed.\n");
         exit(1);
     }
-    
-    memset(buffer,1, max_msg_size);
 
-    for(size=1; size <=max_msg_size/sizeof(uint32_t); size *= 2) {
-        if(size > LARGE_MESSAGE_SIZE) {
+    memset(buffer, 1, max_msg_size);
+
+    for (size = 1; size <= max_msg_size / sizeof(uint32_t); size *= 2) {
+        if (size > LARGE_MESSAGE_SIZE) {
             skip = options.skip_large;
             iterations = options.iterations_large;
-        }
-        else {
+        } else {
             skip = options.skip;
             iterations = options.iterations;
         }
 
-        timer=0;        
-        for(i=0; i < iterations + skip ; i++) {
+        timer = 0;
+        for (i = 0; i < iterations + skip; i++) {
             t_start = TIME();
-            if(i%2)
-                shmem_broadcast32(buffer, buffer, size, 0, 0, 0, numprocs, pSyncBcast1);
+            if (i % 2)
+                shmem_broadcast32(buffer, buffer, size, 0, 0, 0, numprocs,
+                                  pSyncBcast1);
             else
-                shmem_broadcast32(buffer, buffer, size, 0, 0, 0, numprocs, pSyncBcast2);
+                shmem_broadcast32(buffer, buffer, size, 0, 0, 0, numprocs,
+                                  pSyncBcast2);
             t_stop = TIME();
 
-            if(i>=skip){
-                timer+=t_stop-t_start;
-            } 
+            if (i >= skip) {
+                timer += t_stop - t_start;
+            }
             shmem_barrier_all();
         }
-        shmem_barrier_all();            
+        shmem_barrier_all();
         latency = (1.0 * timer) / iterations;
 
-        shmem_double_min_to_all(&min_time, &latency, 1, 0, 0, numprocs, pWrk1, pSyncRed1);
-        shmem_double_max_to_all(&max_time, &latency, 1, 0, 0, numprocs, pWrk2, pSyncRed2);
-        shmem_double_sum_to_all(&avg_time, &latency, 1, 0, 0, numprocs, pWrk1, pSyncRed1);
-        avg_time = avg_time/numprocs;
+        shmem_double_min_to_all(&min_time, &latency, 1, 0, 0, numprocs, pWrk1,
+                                pSyncRed1);
+        shmem_double_max_to_all(&max_time, &latency, 1, 0, 0, numprocs, pWrk2,
+                                pSyncRed2);
+        shmem_double_sum_to_all(&avg_time, &latency, 1, 0, 0, numprocs, pWrk1,
+                                pSyncRed1);
+        avg_time = avg_time / numprocs;
 
-        print_data_pgas(rank, full, size*sizeof(uint32_t), avg_time, min_time, max_time, iterations);
+        print_data_pgas(rank, full, size * sizeof(uint32_t), avg_time, min_time,
+                        max_time, iterations);
     }
 
-      
-#ifdef OSHM_1_3   
-    shmem_free(buffer);  
-    shmem_finalize ();
+#ifdef OSHM_1_3
+    shmem_free(buffer);
+    shmem_finalize();
 #else
-	shfree(buffer);
+    shfree(buffer);
 #endif
 
     return EXIT_SUCCESS;

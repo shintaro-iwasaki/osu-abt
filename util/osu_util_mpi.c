@@ -11,7 +11,7 @@
 #include "osu_util_mpi.h"
 
 MPI_Request request[MAX_REQ_NUM];
-MPI_Status  reqstat[MAX_REQ_NUM];
+MPI_Status reqstat[MAX_REQ_NUM];
 MPI_Request send_request[MAX_REQ_NUM];
 MPI_Request recv_request[MAX_REQ_NUM];
 
@@ -61,11 +61,11 @@ static int is_alloc = 0;
 static float *d_x, *d_y;
 #endif
 
-void set_device_memory (void * ptr, int data, size_t size)
+void set_device_memory(void *ptr, int data, size_t size)
 {
 #ifdef _ENABLE_OPENACC_
     size_t i;
-    char * p = (char *)ptr;
+    char *p = (char *)ptr;
 #endif
 
     switch (options.accel) {
@@ -77,7 +77,7 @@ void set_device_memory (void * ptr, int data, size_t size)
 #ifdef _ENABLE_OPENACC_
         case OPENACC:
 #pragma acc parallel copyin(size) deviceptr(p)
-            for(i = 0; i < size; i++) {
+            for (i = 0; i < size; i++) {
                 p[i] = data;
             }
             break;
@@ -92,7 +92,7 @@ void set_device_memory (void * ptr, int data, size_t size)
     }
 }
 
-int free_device_buffer (void * buf)
+int free_device_buffer(void *buf)
 {
     if (buf == NULL)
         return 0;
@@ -121,21 +121,23 @@ int free_device_buffer (void * buf)
     return 0;
 }
 
-void *align_buffer (void * ptr, unsigned long align_size)
+void *align_buffer(void *ptr, unsigned long align_size)
 {
-    unsigned long buf = (((unsigned long)ptr + (align_size - 1)) / align_size * align_size);
-    return (void *) buf;
+    unsigned long buf =
+        (((unsigned long)ptr + (align_size - 1)) / align_size * align_size);
+    return (void *)buf;
 }
 
-
-void usage_one_sided (char const * name)
+void usage_one_sided(char const *name)
 {
     if (accel_enabled) {
         fprintf(stdout, "Usage: %s [options] [SRC DST]\n\n", name);
-        fprintf(stdout, "SRC and DST are buffer types for the source and destination\n");
-        fprintf(stdout, "SRC and DST may be `D' or `H' which specifies whether\n"
-                        "the buffer is allocated on the accelerator device or host\n"
-                        "memory for each mpi rank\n\n");
+        fprintf(stdout, "SRC and DST are buffer types for the source and "
+                        "destination\n");
+        fprintf(stdout,
+                "SRC and DST may be `D' or `H' which specifies whether\n"
+                "the buffer is allocated on the accelerator device or host\n"
+                "memory for each mpi rank\n\n");
     } else {
         fprintf(stdout, "Usage: %s [options]\n", name);
     }
@@ -143,62 +145,85 @@ void usage_one_sided (char const * name)
     fprintf(stdout, "Options:\n");
 
     if (accel_enabled) {
-        fprintf(stdout, "  -d --accelerator <type>       accelerator device buffers can be of <type> "
-                   "`cuda', `openacc', or `rocm'\n");
+        fprintf(stdout, "  -d --accelerator <type>       accelerator device "
+                        "buffers can be of <type> "
+                        "`cuda', `openacc', or `rocm'\n");
     }
     fprintf(stdout, "\n");
 
 #if MPI_VERSION >= 3
     fprintf(stdout, "  -w --win-option <win_option>\n");
     fprintf(stdout, "            <win_option> can be any of the follows:\n");
-    fprintf(stdout, "            create            use MPI_Win_create to create an MPI Window object\n");
+    fprintf(stdout, "            create            use MPI_Win_create to "
+                    "create an MPI Window object\n");
     if (accel_enabled) {
-        fprintf(stdout, "            allocate          use MPI_Win_allocate to create an MPI Window object (not valid when using device memory)\n");
+        fprintf(stdout,
+                "            allocate          use MPI_Win_allocate to create "
+                "an MPI Window object (not valid when using device memory)\n");
     } else {
-        fprintf(stdout, "            allocate          use MPI_Win_allocate to create an MPI Window object\n");
+        fprintf(stdout, "            allocate          use MPI_Win_allocate to "
+                        "create an MPI Window object\n");
     }
-    fprintf(stdout, "            dynamic           use MPI_Win_create_dynamic to create an MPI Window object\n");
+    fprintf(stdout, "            dynamic           use MPI_Win_create_dynamic "
+                    "to create an MPI Window object\n");
     fprintf(stdout, "\n");
 #endif
 
     fprintf(stdout, "  -s, --sync-option <sync_option>\n");
     fprintf(stdout, "            <sync_option> can be any of the follows:\n");
-    fprintf(stdout, "            pscw              use Post/Start/Complete/Wait synchronization calls \n");
-    fprintf(stdout, "            fence             use MPI_Win_fence synchronization call\n");
+    fprintf(stdout, "            pscw              use "
+                    "Post/Start/Complete/Wait synchronization calls \n");
+    fprintf(stdout, "            fence             use MPI_Win_fence "
+                    "synchronization call\n");
     if (options.synctype == ALL_SYNC) {
-        fprintf(stdout, "            lock              use MPI_Win_lock/unlock synchronizations calls\n");
+        fprintf(stdout, "            lock              use MPI_Win_lock/unlock "
+                        "synchronizations calls\n");
 #if MPI_VERSION >= 3
-        fprintf(stdout, "            flush             use MPI_Win_flush synchronization call\n");
-        fprintf(stdout, "            flush_local       use MPI_Win_flush_local synchronization call\n");
-        fprintf(stdout, "            lock_all          use MPI_Win_lock_all/unlock_all synchronization calls\n");
+        fprintf(stdout, "            flush             use MPI_Win_flush "
+                        "synchronization call\n");
+        fprintf(stdout, "            flush_local       use MPI_Win_flush_local "
+                        "synchronization call\n");
+        fprintf(stdout, "            lock_all          use "
+                        "MPI_Win_lock_all/unlock_all synchronization calls\n");
 #endif
     }
     fprintf(stdout, "\n");
     if (options.show_size) {
-        fprintf(stdout, "  -m, --message-size          [MIN:]MAX  set the minimum and/or the maximum message size to MIN and/or MAX\n");
-        fprintf(stdout, "                              bytes respectively. Examples:\n");
-        fprintf(stdout, "                              -m 128      // min = default, max = 128\n");
-        fprintf(stdout, "                              -m 2:128    // min = 2, max = 128\n");
-        fprintf(stdout, "                              -m 2:       // min = 2, max = default\n");
-        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum memory consumption to SIZE bytes\n");
-        fprintf(stdout, "                              (default %d)\n", MAX_MEM_LIMIT);
+        fprintf(stdout,
+                "  -m, --message-size          [MIN:]MAX  set the minimum "
+                "and/or the maximum message size to MIN and/or MAX\n");
+        fprintf(stdout, "                              bytes respectively. "
+                        "Examples:\n");
+        fprintf(stdout, "                              -m 128      // min = "
+                        "default, max = 128\n");
+        fprintf(stdout, "                              -m 2:128    // min = 2, "
+                        "max = 128\n");
+        fprintf(stdout, "                              -m 2:       // min = 2, "
+                        "max = default\n");
+        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum "
+                        "memory consumption to SIZE bytes\n");
+        fprintf(stdout, "                              (default %d)\n",
+                MAX_MEM_LIMIT);
     }
-    fprintf(stdout, "  -x, --warmup ITER           number of warmup iterations to skip before timing"
-                   "(default 100)\n");
-    
-    if(options.subtype == BW) {
-        fprintf(stdout, "  -W, --window-size SIZE      set number of messages to send before synchronization (default 64)\n");
+    fprintf(stdout, "  -x, --warmup ITER           number of warmup iterations "
+                    "to skip before timing"
+                    "(default 100)\n");
+
+    if (options.subtype == BW) {
+        fprintf(stdout, "  -W, --window-size SIZE      set number of messages "
+                        "to send before synchronization (default 64)\n");
     }
-    
-    fprintf(stdout, "  -i, --iterations ITER       number of iterations for timing (default 10000)\n");
+
+    fprintf(stdout, "  -i, --iterations ITER       number of iterations for "
+                    "timing (default 10000)\n");
 
     fprintf(stdout, "  -h, --help                  print this help message\n");
     fflush(stdout);
 }
 
-int process_one_sided_options (int opt, char *arg)
+int process_one_sided_options(int opt, char *arg)
 {
-    switch(opt) {
+    switch (opt) {
         case 'w':
 #if MPI_VERSION >= 3
             if (0 == strcasecmp(arg, "create")) {
@@ -218,7 +243,7 @@ int process_one_sided_options (int opt, char *arg)
                 options.sync = PSCW;
             } else if (0 == strcasecmp(arg, "fence")) {
                 options.sync = FENCE;
-            } else if (options.synctype== ALL_SYNC) {
+            } else if (options.synctype == ALL_SYNC) {
                 if (0 == strcasecmp(arg, "lock")) {
                     options.sync = LOCK;
                 }
@@ -249,42 +274,64 @@ void usage_mbw_mr()
 {
     if (accel_enabled) {
         fprintf(stdout, "Usage: osu_mbw_mr [options] [SRC DST]\n\n");
-        fprintf(stdout, "SRC and DST are buffer types for the source and destination\n");
-        fprintf(stdout, "SRC and DST may be `D', `H', or 'M' which specifies whether\n"
-                        "the buffer is allocated on the accelerator device memory, host\n"
-                        "memory or using CUDA Unified memory respectively for each mpi rank\n\n");
+        fprintf(stdout, "SRC and DST are buffer types for the source and "
+                        "destination\n");
+        fprintf(stdout,
+                "SRC and DST may be `D', `H', or 'M' which specifies whether\n"
+                "the buffer is allocated on the accelerator device memory, "
+                "host\n"
+                "memory or using CUDA Unified memory respectively for each mpi "
+                "rank\n\n");
     } else {
         fprintf(stdout, "Usage: osu_mbw_mr [options]\n");
     }
 
     fprintf(stdout, "Options:\n");
-    fprintf(stdout, "  -R=<0,1>, --print-rate         Print uni-directional message rate (default 1)\n");
-    fprintf(stdout, "  -p=<pairs>, --num-pairs        Number of pairs involved (default np / 2)\n");
-    fprintf(stdout, "  -W=<window>, --window-size     Number of messages sent before acknowledgement (default 64)\n");
-    fprintf(stdout, "                                 [cannot be used with -v]\n");
-    fprintf(stdout, "  -V, --vary-window              Vary the window size (default no)\n");
-    fprintf(stdout, "                                 [cannot be used with -W]\n");
+    fprintf(stdout, "  -R=<0,1>, --print-rate         Print uni-directional "
+                    "message rate (default 1)\n");
+    fprintf(stdout, "  -p=<pairs>, --num-pairs        Number of pairs involved "
+                    "(default np / 2)\n");
+    fprintf(stdout, "  -W=<window>, --window-size     Number of messages sent "
+                    "before acknowledgement (default 64)\n");
+    fprintf(stdout,
+            "                                 [cannot be used with -v]\n");
+    fprintf(stdout, "  -V, --vary-window              Vary the window size "
+                    "(default no)\n");
+    fprintf(stdout,
+            "                                 [cannot be used with -W]\n");
     if (options.show_size) {
-        fprintf(stdout, "  -m, --message-size          [MIN:]MAX  set the minimum and/or the maximum message size to MIN and/or MAX\n");
-        fprintf(stdout, "                              bytes respectively. Examples:\n");
-        fprintf(stdout, "                              -m 128      // min = default, max = 128\n");
-        fprintf(stdout, "                              -m 2:128    // min = 2, max = 128\n");
-        fprintf(stdout, "                              -m 2:       // min = 2, max = default\n");
-        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum memory consumption to SIZE bytes\n");
-        fprintf(stdout, "                              (default %d)\n", MAX_MEM_LIMIT);
+        fprintf(stdout,
+                "  -m, --message-size          [MIN:]MAX  set the minimum "
+                "and/or the maximum message size to MIN and/or MAX\n");
+        fprintf(stdout, "                              bytes respectively. "
+                        "Examples:\n");
+        fprintf(stdout, "                              -m 128      // min = "
+                        "default, max = 128\n");
+        fprintf(stdout, "                              -m 2:128    // min = 2, "
+                        "max = 128\n");
+        fprintf(stdout, "                              -m 2:       // min = 2, "
+                        "max = default\n");
+        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum "
+                        "memory consumption to SIZE bytes\n");
+        fprintf(stdout, "                              (default %d)\n",
+                MAX_MEM_LIMIT);
     }
     if (accel_enabled) {
-        fprintf(stdout, "  -d, --accelerator  TYPE     use accelerator device buffers, which can be of TYPE `cuda', \n");
-        fprintf(stdout, "                              `managed', `openacc', or `rocm' (uses standard host buffers if not specified)\n");
+        fprintf(stdout, "  -d, --accelerator  TYPE     use accelerator device "
+                        "buffers, which can be of TYPE `cuda', \n");
+        fprintf(stdout,
+                "                              `managed', `openacc', or `rocm' "
+                "(uses standard host buffers if not specified)\n");
     }
     fprintf(stdout, "  -h, --help                     Print this help\n");
     fprintf(stdout, "\n");
-    fprintf(stdout, "  Note: This benchmark relies on block ordering of the ranks.  Please see\n");
+    fprintf(stdout, "  Note: This benchmark relies on block ordering of the "
+                    "ranks.  Please see\n");
     fprintf(stdout, "        the README for more information.\n");
     fflush(stdout);
 }
 
-void print_bad_usage_message (int rank)
+void print_bad_usage_message(int rank)
 {
     if (rank) {
         return;
@@ -294,8 +341,7 @@ void print_bad_usage_message (int rank)
         fprintf(stderr, "%s [-%c %s]\n\n", bad_usage.message,
                 (char)bad_usage.opt, bad_usage.optarg);
     } else {
-        fprintf(stderr, "%s [-%c]\n\n", bad_usage.message,
-                (char)bad_usage.opt);
+        fprintf(stderr, "%s [-%c]\n\n", bad_usage.message, (char)bad_usage.opt);
     }
     fflush(stderr);
 
@@ -304,7 +350,7 @@ void print_bad_usage_message (int rank)
     }
 }
 
-void print_help_message (int rank)
+void print_help_message(int rank)
 {
     if (rank) {
         return;
@@ -312,74 +358,118 @@ void print_help_message (int rank)
 
     if (accel_enabled && (options.bench == PT2PT)) {
         fprintf(stdout, "Usage: %s [options] [SRC DST]\n\n", benchmark_name);
-        fprintf(stdout, "SRC and DST are buffer types for the source and destination\n");
-        fprintf(stdout, "SRC and DST may be `D', `H', or 'M' which specifies whether\n"
-                        "the buffer is allocated on the accelerator device memory, host\n"
-                        "memory or using CUDA Unified memory respectively for each mpi rank\n\n");
+        fprintf(stdout, "SRC and DST are buffer types for the source and "
+                        "destination\n");
+        fprintf(stdout,
+                "SRC and DST may be `D', `H', or 'M' which specifies whether\n"
+                "the buffer is allocated on the accelerator device memory, "
+                "host\n"
+                "memory or using CUDA Unified memory respectively for each mpi "
+                "rank\n\n");
     } else {
         fprintf(stdout, "Usage: %s [options]\n", benchmark_name);
         fprintf(stdout, "Options:\n");
     }
 
-    if (accel_enabled && (options.subtype != LAT_MT) && (options.subtype != LAT_MP)) {
-        fprintf(stdout, "  -d, --accelerator  TYPE     use accelerator device buffers, which can be of TYPE `cuda', \n");
-        fprintf(stdout, "                              `managed', `openacc', or `rocm' (uses standard host buffers if not specified)\n");
+    if (accel_enabled && (options.subtype != LAT_MT) &&
+        (options.subtype != LAT_MP)) {
+        fprintf(stdout, "  -d, --accelerator  TYPE     use accelerator device "
+                        "buffers, which can be of TYPE `cuda', \n");
+        fprintf(stdout,
+                "                              `managed', `openacc', or `rocm' "
+                "(uses standard host buffers if not specified)\n");
     }
 
     if (options.show_size) {
-        fprintf(stdout, "  -m, --message-size          [MIN:]MAX  set the minimum and/or the maximum message size to MIN and/or MAX\n");
-        fprintf(stdout, "                              bytes respectively. Examples:\n");
-        fprintf(stdout, "                              -m 128      // min = default, max = 128\n");
-        fprintf(stdout, "                              -m 2:128    // min = 2, max = 128\n");
-        fprintf(stdout, "                              -m 2:       // min = 2, max = default\n");
-        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum memory consumption to SIZE bytes\n");
-        fprintf(stdout, "                              (default %d)\n", MAX_MEM_LIMIT);
+        fprintf(stdout,
+                "  -m, --message-size          [MIN:]MAX  set the minimum "
+                "and/or the maximum message size to MIN and/or MAX\n");
+        fprintf(stdout, "                              bytes respectively. "
+                        "Examples:\n");
+        fprintf(stdout, "                              -m 128      // min = "
+                        "default, max = 128\n");
+        fprintf(stdout, "                              -m 2:128    // min = 2, "
+                        "max = 128\n");
+        fprintf(stdout, "                              -m 2:       // min = 2, "
+                        "max = default\n");
+        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum "
+                        "memory consumption to SIZE bytes\n");
+        fprintf(stdout, "                              (default %d)\n",
+                MAX_MEM_LIMIT);
     }
 
-    fprintf(stdout, "  -i, --iterations ITER       set iterations per message size to ITER (default 1000 for small\n");
-    fprintf(stdout, "                              messages, 100 for large messages)\n");
-    fprintf(stdout, "  -x, --warmup ITER           set number of warmup iterations to skip before timing (default 200)\n");
+    fprintf(stdout, "  -i, --iterations ITER       set iterations per message "
+                    "size to ITER (default 1000 for small\n");
+    fprintf(stdout, "                              messages, 100 for large "
+                    "messages)\n");
+    fprintf(stdout, "  -x, --warmup ITER           set number of warmup "
+                    "iterations to skip before timing (default 200)\n");
 
     if (options.subtype == BW) {
-        fprintf(stdout, "  -W, --window-size SIZE      set number of messages to send before synchronization (default 64)\n");
+        fprintf(stdout, "  -W, --window-size SIZE      set number of messages "
+                        "to send before synchronization (default 64)\n");
     }
 
     if (options.bench == COLLECTIVE) {
-        fprintf(stdout, "  -f, --full                  print full format listing (MIN/MAX latency and ITERATIONS\n");
-        fprintf(stdout, "                              displayed in addition to AVERAGE latency)\n");
+        fprintf(stdout, "  -f, --full                  print full format "
+                        "listing (MIN/MAX latency and ITERATIONS\n");
+        fprintf(stdout, "                              displayed in addition "
+                        "to AVERAGE latency)\n");
 
         if (options.subtype == NBC) {
-            fprintf(stdout, "  -t, --num_test_calls CALLS  set the number of MPI_Test() calls during the dummy computation, \n");
-            fprintf(stdout, "                              set CALLS to 100, 1000, or any number > 0.\n");
+            fprintf(stdout,
+                    "  -t, --num_test_calls CALLS  set the number of "
+                    "MPI_Test() calls during the dummy computation, \n");
+            fprintf(stdout, "                              set CALLS to 100, "
+                            "1000, or any number > 0.\n");
         }
 
         if (CUDA_KERNEL_ENABLED) {
-            fprintf(stdout, "  -r, --cuda-target TARGET    set the compute target for dummy computation\n");
-            fprintf(stdout, "                              set TARGET to cpu (default) to execute \n");
-            fprintf(stdout, "                              on CPU only, set to gpu for executing kernel \n");
-            fprintf(stdout, "                              on the GPU only, and set to both for compute on both.\n");
+            fprintf(stdout, "  -r, --cuda-target TARGET    set the compute "
+                            "target for dummy computation\n");
+            fprintf(stdout, "                              set TARGET to cpu "
+                            "(default) to execute \n");
+            fprintf(stdout, "                              on CPU only, set to "
+                            "gpu for executing kernel \n");
+            fprintf(stdout, "                              on the GPU only, "
+                            "and set to both for compute on both.\n");
 
-            fprintf(stdout, "  -a, --array-size SIZE       set the size of arrays to be allocated on device (GPU) \n");
-            fprintf(stdout, "                              for dummy compute on device (GPU) (default 32) \n");
+            fprintf(stdout, "  -a, --array-size SIZE       set the size of "
+                            "arrays to be allocated on device (GPU) \n");
+            fprintf(stdout, "                              for dummy compute "
+                            "on device (GPU) (default 32) \n");
         }
     }
     if (LAT_MT == options.subtype) {
-        fprintf(stdout, "  -t, --num_threads           SEND:[RECV]  set the sender and receiver number of threads \n");
-        fprintf(stdout, "                              min: %d default: (receiver threads: %d sender threads: 1), max: %d.\n", MIN_NUM_THREADS, DEF_NUM_THREADS, MAX_NUM_THREADS);
+        fprintf(stdout, "  -t, --num_threads           SEND:[RECV]  set the "
+                        "sender and receiver number of threads \n");
+        fprintf(stdout,
+                "                              min: %d default: (receiver "
+                "threads: %d sender threads: 1), max: %d.\n",
+                MIN_NUM_THREADS, DEF_NUM_THREADS, MAX_NUM_THREADS);
         fprintf(stdout, "                              Examples: \n");
-        fprintf(stdout, "                              -t 4        // receiver threads = 4 and sender threads = 1\n");
-        fprintf(stdout, "                              -t 4:6      // sender threads = 4 and receiver threads = 6\n");
-        fprintf(stdout, "                              -t 2:       // not defined\n");
+        fprintf(stdout, "                              -t 4        // receiver "
+                        "threads = 4 and sender threads = 1\n");
+        fprintf(stdout, "                              -t 4:6      // sender "
+                        "threads = 4 and receiver threads = 6\n");
+        fprintf(stdout,
+                "                              -t 2:       // not defined\n");
     }
 
     if (LAT_MP == options.subtype) {
-        fprintf(stdout, "  -t, --num_processes         SEND:[RECV]  set the sender and receiver number of processes \n");
-        fprintf(stdout, "                              min: %d default: (receiver processes: %d sender processes: 1), max: %d.\n",\
-                                                       MIN_NUM_PROCESSES, DEF_NUM_PROCESSES, MAX_NUM_PROCESSES);
+        fprintf(stdout, "  -t, --num_processes         SEND:[RECV]  set the "
+                        "sender and receiver number of processes \n");
+        fprintf(stdout,
+                "                              min: %d default: (receiver "
+                "processes: %d sender processes: 1), max: %d.\n",
+                MIN_NUM_PROCESSES, DEF_NUM_PROCESSES, MAX_NUM_PROCESSES);
         fprintf(stdout, "                              Examples: \n");
-        fprintf(stdout, "                              -t 4        // receiver processes = 4 and sender processes = 1\n");
-        fprintf(stdout, "                              -t 4:6      // sender processes = 4 and receiver processes = 6\n");
-        fprintf(stdout, "                              -t 2:       // not defined\n");
+        fprintf(stdout, "                              -t 4        // receiver "
+                        "processes = 4 and sender processes = 1\n");
+        fprintf(stdout, "                              -t 4:6      // sender "
+                        "processes = 4 and receiver processes = 6\n");
+        fprintf(stdout,
+                "                              -t 2:       // not defined\n");
     }
 
     fprintf(stdout, "  -h, --help                  print this help\n");
@@ -388,7 +478,7 @@ void print_help_message (int rank)
     fflush(stdout);
 }
 
-void print_help_message_get_acc_lat (int rank)
+void print_help_message_get_acc_lat(int rank)
 {
     if (rank) {
         return;
@@ -398,47 +488,66 @@ void print_help_message_get_acc_lat (int rank)
         fprintf(stderr, "%s [-%c %s]\n\n", bad_usage.message,
                 (char)bad_usage.opt, bad_usage.optarg);
     } else {
-        fprintf(stderr, "%s [-%c]\n\n", bad_usage.message,
-                (char)bad_usage.opt);
+        fprintf(stderr, "%s [-%c]\n\n", bad_usage.message, (char)bad_usage.opt);
     }
     fflush(stderr);
 
-    fprintf(stdout, "Usage: ./osu_get_acc_latency -w <win_option>  -s < sync_option> [-x ITER] [-i ITER]\n");
+    fprintf(stdout, "Usage: ./osu_get_acc_latency -w <win_option>  -s < "
+                    "sync_option> [-x ITER] [-i ITER]\n");
     if (options.show_size) {
-        fprintf(stdout, "  -m, --message-size          [MIN:]MAX  set the minimum and/or the maximum message size to MIN and/or MAX\n");
-        fprintf(stdout, "                              bytes respectively. Examples:\n");
-        fprintf(stdout, "                              -m 128      // min = default, max = 128\n");
-        fprintf(stdout, "                              -m 2:128    // min = 2, max = 128\n");
-        fprintf(stdout, "                              -m 2:       // min = 2, max = default\n");
-        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum memory consumption to SIZE bytes\n");
-        fprintf(stdout, "                              (default %d)\n", MAX_MEM_LIMIT);
+        fprintf(stdout,
+                "  -m, --message-size          [MIN:]MAX  set the minimum "
+                "and/or the maximum message size to MIN and/or MAX\n");
+        fprintf(stdout, "                              bytes respectively. "
+                        "Examples:\n");
+        fprintf(stdout, "                              -m 128      // min = "
+                        "default, max = 128\n");
+        fprintf(stdout, "                              -m 2:128    // min = 2, "
+                        "max = 128\n");
+        fprintf(stdout, "                              -m 2:       // min = 2, "
+                        "max = default\n");
+        fprintf(stdout, "  -M, --mem-limit SIZE        set per process maximum "
+                        "memory consumption to SIZE bytes\n");
+        fprintf(stdout, "                              (default %d)\n",
+                MAX_MEM_LIMIT);
     }
 
-    fprintf(stdout, "  -x ITER       number of warmup iterations to skip before timing"
+    fprintf(stdout,
+            "  -x ITER       number of warmup iterations to skip before timing"
             "(default 100)\n");
-    fprintf(stdout, "  -i ITER       number of iterations for timing (default 10000)\n");
+    fprintf(stdout, "  -i ITER       number of iterations for timing (default "
+                    "10000)\n");
     fprintf(stdout, "\n");
     fprintf(stdout, "win_option:\n");
-    fprintf(stdout, "  create            use MPI_Win_create to create an MPI Window object\n");
-    fprintf(stdout, "  allocate          use MPI_Win_allocate to create an MPI Window object\n");
-    fprintf(stdout, "  dynamic           use MPI_Win_create_dynamic to create an MPI Window object\n");
+    fprintf(stdout, "  create            use MPI_Win_create to create an MPI "
+                    "Window object\n");
+    fprintf(stdout, "  allocate          use MPI_Win_allocate to create an MPI "
+                    "Window object\n");
+    fprintf(stdout, "  dynamic           use MPI_Win_create_dynamic to create "
+                    "an MPI Window object\n");
     fprintf(stdout, "\n");
 
     fprintf(stdout, "sync_option:\n");
-    fprintf(stdout, "  lock              use MPI_Win_lock/unlock synchronizations calls\n");
-    fprintf(stdout, "  flush             use MPI_Win_flush synchronization call\n");
-    fprintf(stdout, "  flush_local       use MPI_Win_flush_local synchronization call\n");
-    fprintf(stdout, "  lock_all          use MPI_Win_lock_all/unlock_all synchronization calls\n");
-    fprintf(stdout, "  pscw              use Post/Start/Complete/Wait synchronization calls \n");
-    fprintf(stdout, "  fence             use MPI_Win_fence synchronization call\n");
+    fprintf(stdout, "  lock              use MPI_Win_lock/unlock "
+                    "synchronizations calls\n");
+    fprintf(stdout,
+            "  flush             use MPI_Win_flush synchronization call\n");
+    fprintf(stdout, "  flush_local       use MPI_Win_flush_local "
+                    "synchronization call\n");
+    fprintf(stdout, "  lock_all          use MPI_Win_lock_all/unlock_all "
+                    "synchronization calls\n");
+    fprintf(stdout, "  pscw              use Post/Start/Complete/Wait "
+                    "synchronization calls \n");
+    fprintf(stdout,
+            "  fence             use MPI_Win_fence synchronization call\n");
     fprintf(stdout, "\n");
 
     fflush(stdout);
 }
 
-void print_header_one_sided (int rank, enum WINDOW win, enum SYNC sync)
+void print_header_one_sided(int rank, enum WINDOW win, enum SYNC sync)
 {
-    if(rank == 0) {
+    if (rank == 0) {
         switch (options.accel) {
             case CUDA:
                 printf(benchmark_header, "-CUDA");
@@ -453,30 +562,35 @@ void print_header_one_sided (int rank, enum WINDOW win, enum SYNC sync)
                 printf(benchmark_header, "");
                 break;
         }
-        fprintf(stdout, "# Window creation: %s\n",
-                win_info[win]);
-        fprintf(stdout, "# Synchronization: %s\n",
-                sync_info[sync]);
+        fprintf(stdout, "# Window creation: %s\n", win_info[win]);
+        fprintf(stdout, "# Synchronization: %s\n", sync_info[sync]);
 
         switch (options.accel) {
             case CUDA:
             case OPENACC:
             case ROCM:
-                fprintf(stdout, "# Rank 0 Memory on %s and Rank 1 Memory on %s\n",
-                       'M' == options.src ? "MANAGED (M)" : ('D' == options.src ? "DEVICE (D)" : "HOST (H)"),
-                       'M' == options.dst ? "MANAGED (M)" : ('D' == options.dst ? "DEVICE (D)" : "HOST (H)"));
+                fprintf(stdout,
+                        "# Rank 0 Memory on %s and Rank 1 Memory on %s\n",
+                        'M' == options.src
+                            ? "MANAGED (M)"
+                            : ('D' == options.src ? "DEVICE (D)" : "HOST (H)"),
+                        'M' == options.dst
+                            ? "MANAGED (M)"
+                            : ('D' == options.dst ? "DEVICE (D)" : "HOST (H)"));
             default:
                 if (options.subtype == BW) {
-                    fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH, "Bandwidth (MB/s)");
+                    fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH,
+                            "Bandwidth (MB/s)");
                 } else {
-                    fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH, "Latency (us)");
+                    fprintf(stdout, "%-*s%*s\n", 10, "# Size", FIELD_WIDTH,
+                            "Latency (us)");
                 }
                 fflush(stdout);
         }
     }
 }
 
-void print_version_message (int rank)
+void print_version_message(int rank)
 {
     if (rank) {
         return;
@@ -503,7 +617,7 @@ void print_version_message (int rank)
     fflush(stdout);
 }
 
-void print_preamble_nbc (int rank)
+void print_preamble_nbc(int rank)
 {
     if (rank) {
         return;
@@ -529,7 +643,8 @@ void print_preamble_nbc (int rank)
             break;
     }
 
-    fprintf(stdout, "# Overall = Coll. Init + Compute + MPI_Test + MPI_Wait\n\n");
+    fprintf(stdout,
+            "# Overall = Coll. Init + Compute + MPI_Test + MPI_Wait\n\n");
 
     if (options.show_size) {
         fprintf(stdout, "%-*s", 10, "# Size");
@@ -572,7 +687,7 @@ void display_nbc_params()
     }
 }
 
-void print_preamble (int rank)
+void print_preamble(int rank)
 {
     if (rank) {
         return;
@@ -613,70 +728,68 @@ void print_preamble (int rank)
     fflush(stdout);
 }
 
-void calculate_and_print_stats(int rank, int size, int numprocs,
-                          double timer, double latency,
-                          double test_time, double cpu_time,
-                          double wait_time, double init_time)
+void calculate_and_print_stats(int rank, int size, int numprocs, double timer,
+                               double latency, double test_time,
+                               double cpu_time, double wait_time,
+                               double init_time)
 {
-    double test_total   = (test_time * 1e6) / options.iterations;
-    double tcomp_total  = (cpu_time * 1e6) / options.iterations;
+    double test_total = (test_time * 1e6) / options.iterations;
+    double tcomp_total = (cpu_time * 1e6) / options.iterations;
     double overall_time = (timer * 1e6) / options.iterations;
-    double wait_total   = (wait_time * 1e6) / options.iterations;
-    double init_total   = (init_time * 1e6) / options.iterations;
-    double comm_time   = latency;
+    double wait_total = (wait_time * 1e6) / options.iterations;
+    double init_total = (init_time * 1e6) / options.iterations;
+    double comm_time = latency;
 
-    if(rank != 0) {
-        MPI_CHECK(MPI_Reduce(&test_total, &test_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
+    if (rank != 0) {
+        MPI_CHECK(MPI_Reduce(&test_total, &test_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
         MPI_CHECK(MPI_Reduce(&comm_time, &comm_time, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(&overall_time, &overall_time, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(&tcomp_total, &tcomp_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(&wait_total, &wait_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(&init_total, &init_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
+                             MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(&overall_time, &overall_time, 1, MPI_DOUBLE,
+                             MPI_SUM, 0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(&tcomp_total, &tcomp_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(&wait_total, &wait_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(&init_total, &init_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
     } else {
-        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &test_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &comm_time, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &overall_time, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &tcomp_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &wait_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
-        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &init_total, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &test_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &comm_time, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &overall_time, 1, MPI_DOUBLE,
+                             MPI_SUM, 0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &tcomp_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &wait_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
+        MPI_CHECK(MPI_Reduce(MPI_IN_PLACE, &init_total, 1, MPI_DOUBLE, MPI_SUM,
+                             0, MPI_COMM_WORLD));
     }
 
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     /* Overall Time (Overlapped) */
-    overall_time = overall_time/numprocs;
+    overall_time = overall_time / numprocs;
     /* Computation Time */
-    tcomp_total = tcomp_total/numprocs;
+    tcomp_total = tcomp_total / numprocs;
     /* Time taken by MPI_Test calls */
-    test_total = test_total/numprocs;
+    test_total = test_total / numprocs;
     /* Pure Communication Time */
-    comm_time = comm_time/numprocs;
+    comm_time = comm_time / numprocs;
     /* Time for MPI_Wait() call */
-    wait_total = wait_total/numprocs;
+    wait_total = wait_total / numprocs;
     /* Time for the NBC call */
-    init_total = init_total/numprocs;
+    init_total = init_total / numprocs;
 
     print_stats_nbc(rank, size, overall_time, tcomp_total, comm_time,
                     wait_total, init_total, test_total);
-
 }
 
-void print_stats_nbc (int rank, int size, double overall_time,
-                 double cpu_time, double comm_time,
-                 double wait_time, double init_time,
-                 double test_time)
+void print_stats_nbc(int rank, int size, double overall_time, double cpu_time,
+                     double comm_time, double wait_time, double init_time,
+                     double test_time)
 {
     if (rank) {
         return;
@@ -685,12 +798,14 @@ void print_stats_nbc (int rank, int size, double overall_time,
     double overlap;
 
     /* Note : cpu_time received in this function includes time for
-       *      dummy compute as well as test calls so we will subtract
-       *      the test_time for overlap calculation as test is an
-       *      overhead
-       */
+     *      dummy compute as well as test calls so we will subtract
+     *      the test_time for overlap calculation as test is an
+     *      overhead
+     */
 
-    overlap = MAX(0, 100 - (((overall_time - (cpu_time - test_time)) / comm_time) * 100));
+    overlap =
+        MAX(0, 100 - (((overall_time - (cpu_time - test_time)) / comm_time) *
+                      100));
 
     if (options.show_size) {
         fprintf(stdout, "%-*d", 10, size);
@@ -700,15 +815,15 @@ void print_stats_nbc (int rank, int size, double overall_time,
     }
 
     if (options.show_full) {
-        fprintf(stdout, "%*.*f%*.*f%*.*f%*.*f%*.*f%*.*f\n",
-                FIELD_WIDTH, FLOAT_PRECISION, (cpu_time - test_time),
-                FIELD_WIDTH, FLOAT_PRECISION, init_time,
-                FIELD_WIDTH, FLOAT_PRECISION, test_time,
-                FIELD_WIDTH, FLOAT_PRECISION, wait_time,
-                FIELD_WIDTH, FLOAT_PRECISION, comm_time,
-                FIELD_WIDTH, FLOAT_PRECISION, overlap);
+        fprintf(stdout, "%*.*f%*.*f%*.*f%*.*f%*.*f%*.*f\n", FIELD_WIDTH,
+                FLOAT_PRECISION, (cpu_time - test_time), FIELD_WIDTH,
+                FLOAT_PRECISION, init_time, FIELD_WIDTH, FLOAT_PRECISION,
+                test_time, FIELD_WIDTH, FLOAT_PRECISION, wait_time, FIELD_WIDTH,
+                FLOAT_PRECISION, comm_time, FIELD_WIDTH, FLOAT_PRECISION,
+                overlap);
     } else {
-        fprintf(stdout, "%*.*f", FIELD_WIDTH, FLOAT_PRECISION, (cpu_time - test_time));
+        fprintf(stdout, "%*.*f", FIELD_WIDTH, FLOAT_PRECISION,
+                (cpu_time - test_time));
         fprintf(stdout, "%*.*f", FIELD_WIDTH, FLOAT_PRECISION, comm_time);
         fprintf(stdout, "%*.*f\n", FIELD_WIDTH, FLOAT_PRECISION, overlap);
     }
@@ -716,7 +831,8 @@ void print_stats_nbc (int rank, int size, double overall_time,
     fflush(stdout);
 }
 
-void print_stats (int rank, int size, double avg_time, double min_time, double max_time)
+void print_stats(int rank, int size, double avg_time, double min_time,
+                 double max_time)
 {
     if (rank) {
         return;
@@ -730,10 +846,9 @@ void print_stats (int rank, int size, double avg_time, double min_time, double m
     }
 
     if (options.show_full) {
-        fprintf(stdout, "%*.*f%*.*f%*lu\n",
-                FIELD_WIDTH, FLOAT_PRECISION, min_time,
-                FIELD_WIDTH, FLOAT_PRECISION, max_time,
-                12, options.iterations);
+        fprintf(stdout, "%*.*f%*.*f%*lu\n", FIELD_WIDTH, FLOAT_PRECISION,
+                min_time, FIELD_WIDTH, FLOAT_PRECISION, max_time, 12,
+                options.iterations);
     } else {
         fprintf(stdout, "\n");
     }
@@ -741,7 +856,8 @@ void print_stats (int rank, int size, double avg_time, double min_time, double m
     fflush(stdout);
 }
 
-void set_buffer_pt2pt (void * buffer, int rank, enum accel_type type, int data, size_t size)
+void set_buffer_pt2pt(void *buffer, int rank, enum accel_type type, int data,
+                      size_t size)
 {
     char buf_type = 'H';
 
@@ -760,8 +876,8 @@ void set_buffer_pt2pt (void * buffer, int rank, enum accel_type type, int data, 
 #ifdef _ENABLE_OPENACC_
             if (type == OPENACC) {
                 size_t i;
-                char * p = (char *)buffer;
-                #pragma acc parallel loop deviceptr(p)
+                char *p = (char *)buffer;
+#pragma acc parallel loop deviceptr(p)
                 for (i = 0; i < size; i++) {
                     p[i] = data;
                 }
@@ -782,11 +898,11 @@ void set_buffer_pt2pt (void * buffer, int rank, enum accel_type type, int data, 
     }
 }
 
-void set_buffer (void * buffer, enum accel_type type, int data, size_t size)
+void set_buffer(void *buffer, enum accel_type type, int data, size_t size)
 {
 #ifdef _ENABLE_OPENACC_
     size_t i;
-    char * p = (char *)buffer;
+    char *p = (char *)buffer;
 #endif
     switch (type) {
         case NONE:
@@ -800,7 +916,7 @@ void set_buffer (void * buffer, enum accel_type type, int data, size_t size)
             break;
         case OPENACC:
 #ifdef _ENABLE_OPENACC_
-            #pragma acc parallel loop deviceptr(p)
+#pragma acc parallel loop deviceptr(p)
             for (i = 0; i < size; i++) {
                 p[i] = data;
             }
@@ -814,7 +930,7 @@ void set_buffer (void * buffer, enum accel_type type, int data, size_t size)
     }
 }
 
-int allocate_memory_coll (void ** buffer, size_t size, enum accel_type type)
+int allocate_memory_coll(void **buffer, size_t size, enum accel_type type)
 {
     if (options.target == CPU || options.target == BOTH) {
         allocate_host_arrays();
@@ -852,12 +968,12 @@ int allocate_memory_coll (void ** buffer, size_t size, enum accel_type type)
     }
 }
 
-int allocate_device_buffer (char ** buffer)
+int allocate_device_buffer(char **buffer)
 {
     switch (options.accel) {
 #ifdef _ENABLE_CUDA_
         case CUDA:
-             CUDA_CHECK(cudaMalloc((void **)buffer, options.max_message_size));
+            CUDA_CHECK(cudaMalloc((void **)buffer, options.max_message_size));
             break;
 #endif
 #ifdef _ENABLE_OPENACC_
@@ -871,7 +987,7 @@ int allocate_device_buffer (char ** buffer)
 #endif
 #ifdef _ENABLE_ROCM_
         case ROCM:
-             ROCM_CHECK(hipMalloc((void **)buffer, options.max_message_size));
+            ROCM_CHECK(hipMalloc((void **)buffer, options.max_message_size));
             break;
 #endif
         default:
@@ -882,7 +998,7 @@ int allocate_device_buffer (char ** buffer)
     return 0;
 }
 
-int allocate_device_buffer_one_sided (char ** buffer, size_t size)
+int allocate_device_buffer_one_sided(char **buffer, size_t size)
 {
     switch (options.accel) {
 #ifdef _ENABLE_CUDA_
@@ -890,7 +1006,8 @@ int allocate_device_buffer_one_sided (char ** buffer, size_t size)
             CUDA_CHECK(cudaMalloc((void **)buffer, size));
             break;
         case MANAGED:
-            CUDA_CHECK(cudaMallocManaged((void **)buffer, size, cudaMemAttachGlobal));
+            CUDA_CHECK(
+                cudaMallocManaged((void **)buffer, size, cudaMemAttachGlobal));
             break;
 #endif
 #ifdef _ENABLE_OPENACC_
@@ -904,7 +1021,7 @@ int allocate_device_buffer_one_sided (char ** buffer, size_t size)
 #endif
 #ifdef _ENABLE_ROCM_
         case ROCM:
-             ROCM_CHECK(hipMalloc((void **)buffer, size));
+            ROCM_CHECK(hipMalloc((void **)buffer, size));
             break;
 #endif
         default:
@@ -915,23 +1032,24 @@ int allocate_device_buffer_one_sided (char ** buffer, size_t size)
     return 0;
 }
 
-int allocate_managed_buffer (char ** buffer)
+int allocate_managed_buffer(char **buffer)
 {
     switch (options.accel) {
 #ifdef _ENABLE_CUDA_
         case CUDA:
-            CUDA_CHECK(cudaMallocManaged((void **)buffer, options.max_message_size, cudaMemAttachGlobal));
+            CUDA_CHECK(cudaMallocManaged((void **)buffer,
+                                         options.max_message_size,
+                                         cudaMemAttachGlobal));
             break;
 #endif
         default:
             fprintf(stderr, "Could not allocate device memory\n");
             return 1;
-
     }
     return 0;
 }
 
-int allocate_memory_pt2pt_mul (char ** sbuf, char ** rbuf, int rank, int pairs)
+int allocate_memory_pt2pt_mul(char **sbuf, char **rbuf, int rank, int pairs)
 {
     unsigned long align_size = sysconf(_SC_PAGESIZE);
 
@@ -957,12 +1075,14 @@ int allocate_memory_pt2pt_mul (char ** sbuf, char ** rbuf, int rank, int pairs)
                 return 1;
             }
         } else {
-            if (posix_memalign((void**)sbuf, align_size, options.max_message_size)) {
+            if (posix_memalign((void **)sbuf, align_size,
+                               options.max_message_size)) {
                 fprintf(stderr, "Error allocating host memory\n");
                 return 1;
             }
 
-            if (posix_memalign((void**)rbuf, align_size, options.max_message_size)) {
+            if (posix_memalign((void **)rbuf, align_size,
+                               options.max_message_size)) {
                 fprintf(stderr, "Error allocating host memory\n");
                 return 1;
             }
@@ -992,12 +1112,14 @@ int allocate_memory_pt2pt_mul (char ** sbuf, char ** rbuf, int rank, int pairs)
                 return 1;
             }
         } else {
-            if (posix_memalign((void**)sbuf, align_size, options.max_message_size)) {
+            if (posix_memalign((void **)sbuf, align_size,
+                               options.max_message_size)) {
                 fprintf(stderr, "Error allocating host memory\n");
                 return 1;
             }
 
-            if (posix_memalign((void**)rbuf, align_size, options.max_message_size)) {
+            if (posix_memalign((void **)rbuf, align_size,
+                               options.max_message_size)) {
                 fprintf(stderr, "Error allocating host memory\n");
                 return 1;
             }
@@ -1009,7 +1131,7 @@ int allocate_memory_pt2pt_mul (char ** sbuf, char ** rbuf, int rank, int pairs)
     return 0;
 }
 
-int allocate_memory_pt2pt (char ** sbuf, char ** rbuf, int rank)
+int allocate_memory_pt2pt(char **sbuf, char **rbuf, int rank)
 {
     unsigned long align_size = sysconf(_SC_PAGESIZE);
 
@@ -1036,12 +1158,14 @@ int allocate_memory_pt2pt (char ** sbuf, char ** rbuf, int rank)
                     return 1;
                 }
             } else {
-                if (posix_memalign((void**)sbuf, align_size, options.max_message_size)) {
+                if (posix_memalign((void **)sbuf, align_size,
+                                   options.max_message_size)) {
                     fprintf(stderr, "Error allocating host memory\n");
                     return 1;
                 }
 
-                if (posix_memalign((void**)rbuf, align_size, options.max_message_size)) {
+                if (posix_memalign((void **)rbuf, align_size,
+                                   options.max_message_size)) {
                     fprintf(stderr, "Error allocating host memory\n");
                     return 1;
                 }
@@ -1069,12 +1193,14 @@ int allocate_memory_pt2pt (char ** sbuf, char ** rbuf, int rank)
                     return 1;
                 }
             } else {
-                if (posix_memalign((void**)sbuf, align_size, options.max_message_size)) {
+                if (posix_memalign((void **)sbuf, align_size,
+                                   options.max_message_size)) {
                     fprintf(stderr, "Error allocating host memory\n");
                     return 1;
                 }
 
-                if (posix_memalign((void**)rbuf, align_size, options.max_message_size)) {
+                if (posix_memalign((void **)rbuf, align_size,
+                                   options.max_message_size)) {
                     fprintf(stderr, "Error allocating host memory\n");
                     return 1;
                 }
@@ -1085,8 +1211,8 @@ int allocate_memory_pt2pt (char ** sbuf, char ** rbuf, int rank)
     return 0;
 }
 
-void allocate_memory_one_sided(int rank, char **user_buf,
-        char **win_base, size_t size, enum WINDOW type, MPI_Win *win)
+void allocate_memory_one_sided(int rank, char **user_buf, char **win_base,
+                               size_t size, enum WINDOW type, MPI_Win *win)
 {
     int page_size;
     int purehost = 0;
@@ -1115,7 +1241,8 @@ void allocate_memory_one_sided(int rank, char **user_buf,
     } else {
         CHECK(posix_memalign((void **)user_buf, page_size, size));
         memset(*user_buf, 'a', size);
-        /* only explicitly allocate buffer for win_base when NOT using MPI_Win_allocate */
+        /* only explicitly allocate buffer for win_base when NOT using
+         * MPI_Win_allocate */
         if (type != WIN_ALLOCATE) {
             CHECK(posix_memalign((void **)win_base, page_size, size));
             memset(*win_base, 'a', size);
@@ -1123,38 +1250,48 @@ void allocate_memory_one_sided(int rank, char **user_buf,
     }
 
 #if MPI_VERSION >= 3
-    MPI_Status  reqstat;
+    MPI_Status reqstat;
 
     switch (type) {
         case WIN_CREATE:
-            MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
+            MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL,
+                                     MPI_COMM_WORLD, win));
             break;
         case WIN_DYNAMIC:
-            MPI_CHECK(MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win));
+            MPI_CHECK(
+                MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win));
             MPI_CHECK(MPI_Win_attach(*win, (void *)*win_base, size));
             MPI_CHECK(MPI_Get_address(*win_base, &disp_local));
-            if(rank == 0){
-                MPI_CHECK(MPI_Send(&disp_local, 1, MPI_AINT, 1, 1, MPI_COMM_WORLD));
-                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 1, 1, MPI_COMM_WORLD, &reqstat));
+            if (rank == 0) {
+                MPI_CHECK(
+                    MPI_Send(&disp_local, 1, MPI_AINT, 1, 1, MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 1, 1,
+                                   MPI_COMM_WORLD, &reqstat));
             } else {
-                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 0, 1, MPI_COMM_WORLD, &reqstat));
-                MPI_CHECK(MPI_Send(&disp_local, 1, MPI_AINT, 0, 1, MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 0, 1,
+                                   MPI_COMM_WORLD, &reqstat));
+                MPI_CHECK(
+                    MPI_Send(&disp_local, 1, MPI_AINT, 0, 1, MPI_COMM_WORLD));
             }
             break;
         default:
             if (purehost) {
-                MPI_CHECK(MPI_Win_allocate(size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, (void*) win_base, win));
+                MPI_CHECK(MPI_Win_allocate(size, 1, MPI_INFO_NULL,
+                                           MPI_COMM_WORLD, (void *)win_base,
+                                           win));
             } else {
-                MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
+                MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL,
+                                         MPI_COMM_WORLD, win));
             }
             break;
     }
 #else
-    MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
+    MPI_CHECK(
+        MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
 #endif
 }
 
-void free_buffer (void * buffer, enum accel_type type)
+void free_buffer(void *buffer, enum accel_type type)
 {
     switch (type) {
         case NONE:
@@ -1190,7 +1327,8 @@ void free_buffer (void * buffer, enum accel_type type)
     }
 }
 
-#if defined(_ENABLE_OPENACC_) || defined(_ENABLE_CUDA_) || defined(_ENABLE_ROCM_)
+#if defined(_ENABLE_OPENACC_) || defined(_ENABLE_CUDA_) ||                     \
+    defined(_ENABLE_ROCM_)
 int omb_get_local_rank()
 {
     char *str = NULL;
@@ -1205,22 +1343,27 @@ int omb_get_local_rank()
     } else if ((str = getenv("LOCAL_RANK")) != NULL) {
         local_rank = atoi(str);
     } else {
-        fprintf(stderr, "Warning: OMB could not identify the local rank of the process.\n");
-        fprintf(stderr, "         This can lead to multiple processes using the same GPU.\n");
-        fprintf(stderr, "         Please use the get_local_rank script in the OMB repo for this.\n");
+        fprintf(stderr, "Warning: OMB could not identify the local rank of the "
+                        "process.\n");
+        fprintf(stderr, "         This can lead to multiple processes using "
+                        "the same GPU.\n");
+        fprintf(stderr, "         Please use the get_local_rank script in the "
+                        "OMB repo for this.\n");
     }
 
     return local_rank;
 }
-#endif /* defined(_ENABLE_OPENACC_) || defined(_ENABLE_CUDA_) || defined(_ENABLE_ROCM_) */
+#endif /* defined(_ENABLE_OPENACC_) || defined(_ENABLE_CUDA_) ||               \
+          defined(_ENABLE_ROCM_) */
 
-int init_accel (void)
+int init_accel(void)
 {
 #ifdef _ENABLE_CUDA_
     CUresult curesult = CUDA_SUCCESS;
     CUdevice cuDevice;
 #endif
-#if defined(_ENABLE_OPENACC_) || defined(_ENABLE_CUDA_) || defined(_ENABLE_ROCM_)
+#if defined(_ENABLE_OPENACC_) || defined(_ENABLE_CUDA_) ||                     \
+    defined(_ENABLE_ROCM_)
     int local_rank = -1, dev_count = 0;
     int dev_id = 0;
 
@@ -1261,7 +1404,7 @@ int init_accel (void)
                 dev_id = local_rank % dev_count;
             }
 
-            acc_set_device_num (dev_id, acc_device_not_host);
+            acc_set_device_num(dev_id, acc_device_not_host);
             break;
 #endif
 #ifdef _ENABLE_ROCM_
@@ -1274,14 +1417,15 @@ int init_accel (void)
             break;
 #endif
         default:
-            fprintf(stderr, "Invalid device type, should be cuda, openacc, or rocm\n");
+            fprintf(stderr,
+                    "Invalid device type, should be cuda, openacc, or rocm\n");
             return 1;
     }
 
     return 0;
 }
 
-int cleanup_accel (void)
+int cleanup_accel(void)
 {
 #ifdef _ENABLE_CUDA_
     CUresult curesult = CUDA_SUCCESS;
@@ -1348,7 +1492,7 @@ void free_host_arrays()
     a = NULL;
 }
 
-void free_memory (void * sbuf, void * rbuf, int rank)
+void free_memory(void *sbuf, void *rbuf, int rank)
 {
     switch (rank) {
         case 0:
@@ -1380,7 +1524,7 @@ void free_memory (void * sbuf, void * rbuf, int rank)
     }
 }
 
-void free_memory_pt2pt_mul (void * sbuf, void * rbuf, int rank, int pairs)
+void free_memory_pt2pt_mul(void *sbuf, void *rbuf, int rank, int pairs)
 {
     if (rank < pairs) {
         if ('D' == options.src || 'M' == options.src) {
@@ -1401,11 +1545,12 @@ void free_memory_pt2pt_mul (void * sbuf, void * rbuf, int rank, int pairs)
     }
 }
 
-void free_memory_one_sided (void *user_buf, void *win_baseptr, enum WINDOW win_type, MPI_Win win, int rank)
+void free_memory_one_sided(void *user_buf, void *win_baseptr,
+                           enum WINDOW win_type, MPI_Win win, int rank)
 {
     MPI_CHECK(MPI_Win_free(&win));
-    /* if MPI_Win_allocate is specified, win_baseptr would be freed by MPI_Win_free,
-     * so only need to free the user_buf */
+    /* if MPI_Win_allocate is specified, win_baseptr would be freed by
+     * MPI_Win_free, so only need to free the user_buf */
     if (win_type == WIN_ALLOCATE) {
         free_memory(user_buf, NULL, rank);
     } else {
@@ -1413,7 +1558,7 @@ void free_memory_one_sided (void *user_buf, void *win_baseptr, enum WINDOW win_t
     }
 }
 
-double dummy_compute(double seconds, MPI_Request* request)
+double dummy_compute(double seconds, MPI_Request *request)
 {
     double test_time = 0.0;
 
@@ -1439,18 +1584,17 @@ void do_compute_gpu(double seconds)
         }
 
         t2 = MPI_Wtime();
-        time_elapsed += (t2-t1);
+        time_elapsed += (t2 - t1);
     }
 }
 #endif
 
-void
-compute_on_host()
+void compute_on_host()
 {
     int i = 0, j = 0;
     for (i = 0; i < DIM; i++)
         for (j = 0; j < DIM; j++)
-            x[i] = x[i] + a[i][j]*a[j][i] + y[j];
+            x[i] = x[i] + a[i][j] * a[j][i] + y[j];
 }
 
 static inline void do_compute_cpu(double target_seconds)
@@ -1461,14 +1605,14 @@ static inline void do_compute_cpu(double target_seconds)
         t1 = MPI_Wtime();
         compute_on_host();
         t2 = MPI_Wtime();
-        time_elapsed += (t2-t1);
+        time_elapsed += (t2 - t1);
     }
     if (DEBUG) {
         fprintf(stderr, "time elapsed = %f\n", (time_elapsed * 1e6));
     }
 }
 
-double do_compute_and_probe(double seconds, MPI_Request* request)
+double do_compute_and_probe(double seconds, MPI_Request *request)
 {
     double t1 = 0.0, t2 = 0.0;
     double test_time = 0.0;
@@ -1478,14 +1622,16 @@ double do_compute_and_probe(double seconds, MPI_Request* request)
     MPI_Status status;
 
     if (options.num_probes) {
-        target_seconds_for_compute = (double) seconds/options.num_probes;
+        target_seconds_for_compute = (double)seconds / options.num_probes;
         if (DEBUG) {
-            fprintf(stderr, "setting target seconds to %f\n", (target_seconds_for_compute * 1e6 ));
+            fprintf(stderr, "setting target seconds to %f\n",
+                    (target_seconds_for_compute * 1e6));
         }
     } else {
         target_seconds_for_compute = seconds;
         if (DEBUG) {
-            fprintf(stderr, "setting target seconds to %f\n", (target_seconds_for_compute * 1e6 ));
+            fprintf(stderr, "setting target seconds to %f\n",
+                    (target_seconds_for_compute * 1e6));
         }
     }
 
@@ -1499,7 +1645,7 @@ double do_compute_and_probe(double seconds, MPI_Request* request)
                 t1 = MPI_Wtime();
                 MPI_CHECK(MPI_Test(request, &flag, &status));
                 t2 = MPI_Wtime();
-                test_time += (t2-t1);
+                test_time += (t2 - t1);
                 num_tests++;
             }
         } else {
@@ -1514,7 +1660,7 @@ double do_compute_and_probe(double seconds, MPI_Request* request)
                 t1 = MPI_Wtime();
                 MPI_CHECK(MPI_Test(request, &flag, &status));
                 t2 = MPI_Wtime();
-                test_time += (t2-t1);
+                test_time += (t2 - t1);
                 num_tests++;
                 do_compute_cpu(target_seconds_for_compute);
             }
@@ -1524,7 +1670,7 @@ double do_compute_and_probe(double seconds, MPI_Request* request)
         }
     } else
 #endif
-    if (options.target == CPU) {
+        if (options.target == CPU) {
         if (options.num_probes) {
             num_tests = 0;
             while (num_tests < options.num_probes) {
@@ -1532,7 +1678,7 @@ double do_compute_and_probe(double seconds, MPI_Request* request)
                 t1 = MPI_Wtime();
                 MPI_CHECK(MPI_Test(request, &flag, &status));
                 t2 = MPI_Wtime();
-                test_time += (t2-t1);
+                test_time += (t2 - t1);
                 num_tests++;
             }
         } else {
@@ -1552,7 +1698,7 @@ double do_compute_and_probe(double seconds, MPI_Request* request)
 
 void allocate_host_arrays()
 {
-    int i=0, j=0;
+    int i = 0, j = 0;
     a = (float **)malloc(DIM * sizeof(float *));
 
     for (i = 0; i < DIM; i++) {
@@ -1570,9 +1716,9 @@ void allocate_host_arrays()
     }
 }
 
-void allocate_atomic_memory(int rank,
-        char **sbuf, char **tbuf, char **cbuf,
-        char **win_base, size_t size, enum WINDOW type, MPI_Win *win)
+void allocate_atomic_memory(int rank, char **sbuf, char **tbuf, char **cbuf,
+                            char **win_base, size_t size, enum WINDOW type,
+                            MPI_Win *win)
 {
     int page_size;
     int purehost = 0;
@@ -1618,38 +1764,49 @@ void allocate_atomic_memory(int rank,
     }
 
 #if MPI_VERSION >= 3
-    MPI_Status  reqstat;
+    MPI_Status reqstat;
 
     switch (type) {
         case WIN_CREATE:
-            MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
+            MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL,
+                                     MPI_COMM_WORLD, win));
             break;
         case WIN_DYNAMIC:
-            MPI_CHECK(MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win));
+            MPI_CHECK(
+                MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win));
             MPI_CHECK(MPI_Win_attach(*win, (void *)*win_base, size));
             MPI_CHECK(MPI_Get_address(*win_base, &disp_local));
-            if(rank == 0){
-                MPI_CHECK(MPI_Send(&disp_local, 1, MPI_AINT, 1, 1, MPI_COMM_WORLD));
-                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 1, 1, MPI_COMM_WORLD, &reqstat));
+            if (rank == 0) {
+                MPI_CHECK(
+                    MPI_Send(&disp_local, 1, MPI_AINT, 1, 1, MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 1, 1,
+                                   MPI_COMM_WORLD, &reqstat));
             } else {
-                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 0, 1, MPI_COMM_WORLD, &reqstat));
-                MPI_CHECK(MPI_Send(&disp_local, 1, MPI_AINT, 0, 1, MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(&disp_remote, 1, MPI_AINT, 0, 1,
+                                   MPI_COMM_WORLD, &reqstat));
+                MPI_CHECK(
+                    MPI_Send(&disp_local, 1, MPI_AINT, 0, 1, MPI_COMM_WORLD));
             }
             break;
         default:
             if (purehost) {
-                MPI_CHECK(MPI_Win_allocate(size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, (void *) win_base, win));
+                MPI_CHECK(MPI_Win_allocate(size, 1, MPI_INFO_NULL,
+                                           MPI_COMM_WORLD, (void *)win_base,
+                                           win));
             } else {
-                MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
+                MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL,
+                                         MPI_COMM_WORLD, win));
             }
             break;
     }
 #else
-    MPI_CHECK(MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
+    MPI_CHECK(
+        MPI_Win_create(*win_base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, win));
 #endif
 }
 
-void free_atomic_memory (void *sbuf, void *win_baseptr, void *tbuf, void *cbuf, enum WINDOW win_type, MPI_Win win, int rank)
+void free_atomic_memory(void *sbuf, void *win_baseptr, void *tbuf, void *cbuf,
+                        enum WINDOW win_type, MPI_Win win, int rank)
 {
     int mem_on_dev = 0;
     MPI_CHECK(MPI_Win_free(&win));
@@ -1689,45 +1846,43 @@ void init_arrays(double target_time)
 
 #ifdef _ENABLE_CUDA_KERNEL_
     if (options.target == GPU || options.target == BOTH) {
-    /* Setting size of arrays for Dummy Compute */
-    int N = options.device_array_size;
+        /* Setting size of arrays for Dummy Compute */
+        int N = options.device_array_size;
 
-    /* Device Arrays for Dummy Compute */
-    allocate_device_arrays(N);
+        /* Device Arrays for Dummy Compute */
+        allocate_device_arrays(N);
 
-    double t1 = 0.0, t2 = 0.0;
+        double t1 = 0.0, t2 = 0.0;
 
-    while (1) {
-        t1 = MPI_Wtime();
+        while (1) {
+            t1 = MPI_Wtime();
 
-        if (options.target == GPU || options.target == BOTH) {
-            CUDA_CHECK(cudaStreamCreate(&stream));
-            call_kernel(A, d_x, d_y, N, &stream);
+            if (options.target == GPU || options.target == BOTH) {
+                CUDA_CHECK(cudaStreamCreate(&stream));
+                call_kernel(A, d_x, d_y, N, &stream);
 
-            CUDA_CHECK(cudaDeviceSynchronize());
-            CUDA_CHECK(cudaStreamDestroy(stream));
+                CUDA_CHECK(cudaDeviceSynchronize());
+                CUDA_CHECK(cudaStreamDestroy(stream));
+            }
+
+            t2 = MPI_Wtime();
+            if ((t2 - t1) < target_time) {
+                N += 32;
+
+                /* Now allocate arrays of size N */
+                allocate_device_arrays(N);
+            } else {
+                break;
+            }
         }
 
-        t2 = MPI_Wtime();
-        if ((t2-t1) < target_time)
-        {
-            N += 32;
-
-            /* Now allocate arrays of size N */
-            allocate_device_arrays(N);
-        } else {
-            break;
-        }
-    }
-
-    /* we reach here with desired N so save it and pass it to options */
-    options.device_array_size = N;
-    if (DEBUG) {
-        fprintf(stderr, "correct N = %d\n", N);
+        /* we reach here with desired N so save it and pass it to options */
+        options.device_array_size = N;
+        if (DEBUG) {
+            fprintf(stderr, "correct N = %d\n", N);
         }
     }
 #endif
-
 }
 
 #ifdef _ENABLE_CUDA_KERNEL_
@@ -1737,9 +1892,9 @@ void allocate_device_arrays(int n)
     free_device_arrays();
 
     /* Allocate Device Arrays for Dummy Compute */
-    CUDA_CHECK(cudaMalloc((void**)&d_x, n * sizeof(float)));
+    CUDA_CHECK(cudaMalloc((void **)&d_x, n * sizeof(float)));
 
-    CUDA_CHECK(cudaMalloc((void**)&d_y, n * sizeof(float)));
+    CUDA_CHECK(cudaMalloc((void **)&d_y, n * sizeof(float)));
 
     CUDA_CHECK(cudaMemset(d_x, 1.0f, n));
     CUDA_CHECK(cudaMemset(d_y, 2.0f, n));

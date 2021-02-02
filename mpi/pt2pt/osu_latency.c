@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU MPI%s Latency Test"
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University. 
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -10,8 +10,7 @@
  */
 #include <osu_util_mpi.h>
 
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int myid, numprocs, i;
     int size;
@@ -42,11 +41,11 @@ main (int argc, char *argv[])
         switch (po_ret) {
             case PO_CUDA_NOT_AVAIL:
                 fprintf(stderr, "CUDA support not enabled.  Please recompile "
-                        "benchmark with CUDA support.\n");
+                                "benchmark with CUDA support.\n");
                 break;
             case PO_OPENACC_NOT_AVAIL:
                 fprintf(stderr, "OPENACC support not enabled.  Please "
-                        "recompile benchmark with OPENACC support.\n");
+                                "recompile benchmark with OPENACC support.\n");
                 break;
             case PO_BAD_USAGE:
                 print_bad_usage_message(myid);
@@ -77,8 +76,8 @@ main (int argc, char *argv[])
             break;
     }
 
-    if(numprocs != 2) {
-        if(myid == 0) {
+    if (numprocs != 2) {
+        if (myid == 0) {
             fprintf(stderr, "This test requires exactly two processes\n");
         }
 
@@ -94,41 +93,46 @@ main (int argc, char *argv[])
 
     print_header(myid, LAT);
 
-    
     /* Latency test */
-    for(size = options.min_message_size; size <= options.max_message_size; size = (size ? size * 2 : 1)) {
+    for (size = options.min_message_size; size <= options.max_message_size;
+         size = (size ? size * 2 : 1)) {
         set_buffer_pt2pt(s_buf, myid, options.accel, 'a', size);
         set_buffer_pt2pt(r_buf, myid, options.accel, 'b', size);
 
-        if(size > LARGE_MESSAGE_SIZE) {
+        if (size > LARGE_MESSAGE_SIZE) {
             options.iterations = options.iterations_large;
             options.skip = options.skip_large;
         }
 
         MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-        if(myid == 0) {
-            for(i = 0; i < options.iterations + options.skip; i++) {
-                if(i == options.skip) {
+        if (myid == 0) {
+            for (i = 0; i < options.iterations + options.skip; i++) {
+                if (i == options.skip) {
                     t_start = MPI_Wtime();
                 }
 
-                MPI_CHECK(MPI_Send(s_buf, size, MPI_CHAR, 1, 1, MPI_COMM_WORLD));
-                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, 1, 1, MPI_COMM_WORLD, &reqstat));
+                MPI_CHECK(
+                    MPI_Send(s_buf, size, MPI_CHAR, 1, 1, MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, 1, 1, MPI_COMM_WORLD,
+                                   &reqstat));
             }
 
             t_end = MPI_Wtime();
         }
 
-        else if(myid == 1) {
-            for(i = 0; i < options.iterations + options.skip; i++) {
-                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &reqstat));
-                MPI_CHECK(MPI_Send(s_buf, size, MPI_CHAR, 0, 1, MPI_COMM_WORLD));
+        else if (myid == 1) {
+            for (i = 0; i < options.iterations + options.skip; i++) {
+                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, 0, 1, MPI_COMM_WORLD,
+                                   &reqstat));
+                MPI_CHECK(
+                    MPI_Send(s_buf, size, MPI_CHAR, 0, 1, MPI_COMM_WORLD));
             }
         }
 
-        if(myid == 0) {
-            double latency = (t_end - t_start) * 1e6 / (2.0 * options.iterations);
+        if (myid == 0) {
+            double latency =
+                (t_end - t_start) * 1e6 / (2.0 * options.iterations);
 
             fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH,
                     FLOAT_PRECISION, latency);
@@ -148,4 +152,3 @@ main (int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-

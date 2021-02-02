@@ -1,8 +1,8 @@
 #define BENCHMARK "OSU MPI Hello World Test"
 #ifdef PACKAGE_VERSION
-#   define HEADER "# " BENCHMARK " v" PACKAGE_VERSION "\n"
+#define HEADER "# " BENCHMARK " v" PACKAGE_VERSION "\n"
 #else
-#   define HEADER "# " BENCHMARK "\n"
+#define HEADER "# " BENCHMARK "\n"
 #endif
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 
-    if(myid == 0) {
+    if (myid == 0) {
         fprintf(stdout, HEADER);
         fprintf(stdout, "This is a test with %d processes\n", numprocs);
         fflush(stdout);
@@ -33,4 +33,3 @@ int main(int argc, char **argv)
     MPI_Finalize();
     return 0;
 }
-

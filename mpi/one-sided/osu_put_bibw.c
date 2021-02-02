@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU MPI_Put%s Bi-directional Bandwidth Test"
 /*
  * Copyright (C) 2003-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University.            
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  *
@@ -11,17 +11,17 @@
 
 #include <osu_util_mpi.h>
 
-double  t_start = 0.0, t_end = 0.0;
-char    *sbuf=NULL, *win_base=NULL;
+double t_start = 0.0, t_end = 0.0;
+char *sbuf = NULL, *win_base = NULL;
 
-void print_bibw (int, int, double);
-void run_put_with_fence (int, enum WINDOW);
-void run_put_with_pscw (int, enum WINDOW);
+void print_bibw(int, int, double);
+void run_put_with_fence(int, enum WINDOW);
+void run_put_with_pscw(int, enum WINDOW);
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    int         rank,nprocs;
-    int         po_ret = PO_OKAY;
+    int rank, nprocs;
+    int po_ret = PO_OKAY;
 
     options.sync = PSCW;
 #if MPI_VERSION >= 3
@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
 #endif
 
     options.bench = ONE_SIDED;
-    options.sync = PSCW; 
+    options.sync = PSCW;
     options.subtype = BW;
     options.synctype = ACTIVE_SYNC;
 
@@ -42,7 +42,7 @@ int main (int argc, char *argv[])
 
     if (PO_OKAY == po_ret && NONE != options.accel) {
         if (init_accel()) {
-           fprintf(stderr, "Error initializing device\n");
+            fprintf(stderr, "Error initializing device\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -55,11 +55,11 @@ int main (int argc, char *argv[])
         switch (po_ret) {
             case PO_CUDA_NOT_AVAIL:
                 fprintf(stderr, "CUDA support not enabled.  Please recompile "
-                        "benchmark with CUDA support.\n");
+                                "benchmark with CUDA support.\n");
                 break;
             case PO_OPENACC_NOT_AVAIL:
                 fprintf(stderr, "OPENACC support not enabled.  Please "
-                        "recompile benchmark with OPENACC support.\n");
+                                "recompile benchmark with OPENACC support.\n");
                 break;
             case PO_BAD_USAGE:
                 print_bad_usage_message(rank);
@@ -77,7 +77,8 @@ int main (int argc, char *argv[])
 
     if (options.sync != PSCW && options.sync != FENCE) {
         if (rank == 0) {
-            fprintf(stderr, "Only pscw and fence sync options are supported for this benchmark\n");
+            fprintf(stderr, "Only pscw and fence sync options are supported "
+                            "for this benchmark\n");
         }
         po_ret = PO_BAD_USAGE;
     }
@@ -96,8 +97,8 @@ int main (int argc, char *argv[])
             break;
     }
 
-    if(nprocs != 2) {
-        if(rank == 0) {
+    if (nprocs != 2) {
+        if (rank == 0) {
             fprintf(stderr, "This test requires exactly two processes\n");
         }
 
@@ -107,12 +108,12 @@ int main (int argc, char *argv[])
     }
 
     print_header_one_sided(rank, options.win, options.sync);
-    
-    switch (options.sync){
-        case FENCE: 
+
+    switch (options.sync) {
+        case FENCE:
             run_put_with_fence(rank, options.win);
             break;
-        default: 
+        default:
             run_put_with_pscw(rank, options.win);
             break;
     }
@@ -134,8 +135,8 @@ void print_bibw(int rank, int size, double t)
     if (rank == 0) {
         double tmp = size / 1e6 * options.iterations * options.window_size;
 
-        fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH,
-                FLOAT_PRECISION, (tmp / t) * 2);
+        fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH, FLOAT_PRECISION,
+                (tmp / t) * 2);
         fflush(stdout);
     }
 }
@@ -143,14 +144,16 @@ void print_bibw(int rank, int size, double t)
 /*Run PUT with Fence */
 void run_put_with_fence(int rank, enum WINDOW type)
 {
-    double t = 0.0; 
+    double t = 0.0;
     int size, i, j;
     MPI_Aint disp = 0;
-    MPI_Win     win;
+    MPI_Win win;
 
     int window_size = options.window_size;
-    for (size = options.min_message_size; size <= options.max_message_size; size = size * 2) {
-        allocate_memory_one_sided(rank, &sbuf, &win_base, size*window_size, type, &win);
+    for (size = options.min_message_size; size <= options.max_message_size;
+         size = size * 2) {
+        allocate_memory_one_sided(rank, &sbuf, &win_base, size * window_size,
+                                  type, &win);
 
 #if MPI_VERSION >= 3
         if (type == WIN_DYNAMIC) {
@@ -158,33 +161,33 @@ void run_put_with_fence(int rank, enum WINDOW type)
         }
 #endif
 
-        if(size > LARGE_MESSAGE_SIZE) {
+        if (size > LARGE_MESSAGE_SIZE) {
             options.iterations = options.iterations_large;
             options.skip = options.skip_large;
         }
 
         MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-        if(rank == 0) {
+        if (rank == 0) {
             for (i = 0; i < options.skip + options.iterations; i++) {
                 if (i == options.skip) {
-                    t_start = MPI_Wtime ();
+                    t_start = MPI_Wtime();
                 }
                 MPI_CHECK(MPI_Win_fence(0, win));
-                for(j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Put(sbuf+(j*size), size, MPI_CHAR, 1, disp + (j * size), size, MPI_CHAR,
-                            win));
+                for (j = 0; j < window_size; j++) {
+                    MPI_CHECK(MPI_Put(sbuf + (j * size), size, MPI_CHAR, 1,
+                                      disp + (j * size), size, MPI_CHAR, win));
                 }
                 MPI_CHECK(MPI_Win_fence(0, win));
             }
-            t_end = MPI_Wtime ();
+            t_end = MPI_Wtime();
             t = t_end - t_start;
         } else {
             for (i = 0; i < options.skip + options.iterations; i++) {
                 MPI_CHECK(MPI_Win_fence(0, win));
-                for(j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Put(sbuf+(j*size), size, MPI_CHAR, 0, disp + (j * size), size, MPI_CHAR,
-                            win));
+                for (j = 0; j < window_size; j++) {
+                    MPI_CHECK(MPI_Put(sbuf + (j * size), size, MPI_CHAR, 0,
+                                      disp + (j * size), size, MPI_CHAR, win));
                 }
                 MPI_CHECK(MPI_Win_fence(0, win));
             }
@@ -194,24 +197,26 @@ void run_put_with_fence(int rank, enum WINDOW type)
 
         print_bibw(rank, size, t);
 
-        free_memory_one_sided (sbuf, win_base, type, win, rank);
+        free_memory_one_sided(sbuf, win_base, type, win, rank);
     }
 }
 
 /*Run PUT with Post/Start/Complete/Wait */
 void run_put_with_pscw(int rank, enum WINDOW type)
 {
-    double t = 0.0; 
+    double t = 0.0;
     int destrank, size, i, j;
     MPI_Aint disp = 0;
-    MPI_Win     win;
-    MPI_Group       comm_group, group;
+    MPI_Win win;
+    MPI_Group comm_group, group;
 
     MPI_CHECK(MPI_Comm_group(MPI_COMM_WORLD, &comm_group));
 
     int window_size = options.window_size;
-    for (size = options.min_message_size; size <= options.max_message_size; size = size * 2) {
-        allocate_memory_one_sided(rank, &sbuf, &win_base, size*window_size, type, &win);
+    for (size = options.min_message_size; size <= options.max_message_size;
+         size = size * 2) {
+        allocate_memory_one_sided(rank, &sbuf, &win_base, size * window_size,
+                                  type, &win);
 
 #if MPI_VERSION >= 3
         if (type == WIN_DYNAMIC) {
@@ -228,20 +233,20 @@ void run_put_with_pscw(int rank, enum WINDOW type)
 
         if (rank == 0) {
             destrank = 1;
-            MPI_CHECK(MPI_Group_incl (comm_group, 1, &destrank, &group));
+            MPI_CHECK(MPI_Group_incl(comm_group, 1, &destrank, &group));
 
             for (i = 0; i < options.skip + options.iterations; i++) {
 
                 if (i == options.skip) {
-                    t_start = MPI_Wtime ();
+                    t_start = MPI_Wtime();
                 }
 
                 MPI_CHECK(MPI_Win_post(group, 0, win));
                 MPI_CHECK(MPI_Win_start(group, 0, win));
 
-                for(j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Put(sbuf + j*size, size, MPI_CHAR, 1, disp + (j*size), size, MPI_CHAR,
-                            win));
+                for (j = 0; j < window_size; j++) {
+                    MPI_CHECK(MPI_Put(sbuf + j * size, size, MPI_CHAR, 1,
+                                      disp + (j * size), size, MPI_CHAR, win));
                 }
 
                 MPI_CHECK(MPI_Win_complete(win));
@@ -258,8 +263,8 @@ void run_put_with_pscw(int rank, enum WINDOW type)
                 MPI_CHECK(MPI_Win_start(group, 0, win));
 
                 for (j = 0; j < window_size; j++) {
-                    MPI_CHECK(MPI_Put(sbuf + j*size, size, MPI_CHAR, 0, disp + (j*size), size, MPI_CHAR,
-                            win));
+                    MPI_CHECK(MPI_Put(sbuf + j * size, size, MPI_CHAR, 0,
+                                      disp + (j * size), size, MPI_CHAR, win));
                 }
 
                 MPI_CHECK(MPI_Win_complete(win));
@@ -273,7 +278,7 @@ void run_put_with_pscw(int rank, enum WINDOW type)
 
         MPI_CHECK(MPI_Group_free(&group));
 
-        free_memory_one_sided (sbuf, win_base, type, win, rank);
+        free_memory_one_sided(sbuf, win_base, type, win, rank);
     }
     MPI_CHECK(MPI_Group_free(&comm_group));
 }

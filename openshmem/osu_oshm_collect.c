@@ -1,7 +1,7 @@
 #define BENCHMARK "OSU OpenSHMEM Collect Latency Test"
 /*
  * Copyright (C) 2002-2021 the Network-Based Computing Laboratory
- * (NBCL), The Ohio State University. 
+ * (NBCL), The Ohio State University.
  *
  * Contact: Dr. D. K. Panda (panda@cse.ohio-state.edu)
  */
@@ -56,26 +56,29 @@ int main(int argc, char *argv[])
     int skip;
     int size = 0;
     static double latency = 0.0;
-    double t_start = 0, t_stop = 0, timer=0;
-    static double avg_time = 0.0, max_time = 0.0, min_time = 0.0; 
+    double t_start = 0, t_stop = 0, timer = 0;
+    static double avg_time = 0.0, max_time = 0.0, min_time = 0.0;
     char *recvbuff, *sendbuff;
     int max_msg_size = 1048576, full = 0, t;
     uint64_t requested_mem_limit = 0;
 
     options.bench = OSHM;
 
-    for ( t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1) pSyncRed1[t] = _SHMEM_SYNC_VALUE;
-    for ( t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1) pSyncRed2[t] = _SHMEM_SYNC_VALUE;
-    for ( t = 0; t < _SHMEM_COLLECT_SYNC_SIZE; t += 1) pSyncCollect1[t] = _SHMEM_SYNC_VALUE;
-    for ( t = 0; t < _SHMEM_COLLECT_SYNC_SIZE; t += 1) pSyncCollect2[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1)
+        pSyncRed1[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_REDUCE_SYNC_SIZE; t += 1)
+        pSyncRed2[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_COLLECT_SYNC_SIZE; t += 1)
+        pSyncCollect1[t] = _SHMEM_SYNC_VALUE;
+    for (t = 0; t < _SHMEM_COLLECT_SYNC_SIZE; t += 1)
+        pSyncCollect2[t] = _SHMEM_SYNC_VALUE;
 
-
-#ifdef OSHM_1_3     
-	shmem_init();
+#ifdef OSHM_1_3
+    shmem_init();
     rank = shmem_my_pe();
     numprocs = shmem_n_pes();
 #else
-	start_pes(0);
+    start_pes(0);
     rank = _my_pe();
     numprocs = _num_pes();
 #endif
@@ -105,51 +108,50 @@ int main(int argc, char *argv[])
         return 0;
     }*/
 
-    if(numprocs < 2) {
-        if(rank == 0) {
+    if (numprocs < 2) {
+        if (rank == 0) {
             fprintf(stderr, "This test requires at least two processes\n");
         }
         return -1;
     }
 
-    requested_mem_limit = (uint64_t) (max_msg_size) * numprocs; 
-    if( requested_mem_limit > options.max_mem_limit) {
-        max_msg_size = options.max_mem_limit/numprocs;
-    } 
+    requested_mem_limit = (uint64_t)(max_msg_size)*numprocs;
+    if (requested_mem_limit > options.max_mem_limit) {
+        max_msg_size = options.max_mem_limit / numprocs;
+    }
 
     print_header_pgas(HEADER, rank, full);
 
-
-#ifdef OSHM_1_3 
-    recvbuff = (char *)shmem_align(align_size, sizeof(char) * max_msg_size
-            * numprocs);
+#ifdef OSHM_1_3
+    recvbuff =
+        (char *)shmem_align(align_size, sizeof(char) * max_msg_size * numprocs);
 #else
-	recvbuff = (char *)shmemalign(align_size, sizeof(char) * max_msg_size
-            * numprocs);
+    recvbuff =
+        (char *)shmemalign(align_size, sizeof(char) * max_msg_size * numprocs);
 #endif
-    
+
     if (NULL == recvbuff) {
         fprintf(stderr, "shmemalign failed.\n");
         exit(1);
     }
 
-#ifdef OSHM_1_3 
+#ifdef OSHM_1_3
     sendbuff = (char *)shmem_align(align_size, sizeof(char) * max_msg_size);
 #else
-	sendbuff = (char *)shmemalign(align_size, sizeof(char) * max_msg_size);
+    sendbuff = (char *)shmemalign(align_size, sizeof(char) * max_msg_size);
 #endif
 
-	if (NULL == sendbuff) {
+    if (NULL == sendbuff) {
         fprintf(stderr, "shmemalign failed.\n");
         exit(1);
     }
 
-    memset(recvbuff, 1, max_msg_size*numprocs);
+    memset(recvbuff, 1, max_msg_size * numprocs);
     memset(sendbuff, 0, max_msg_size);
 
-    for(size=1; size <= max_msg_size/sizeof(uint32_t); size *= 2) {
+    for (size = 1; size <= max_msg_size / sizeof(uint32_t); size *= 2) {
 
-        if(size > LARGE_MESSAGE_SIZE) {
+        if (size > LARGE_MESSAGE_SIZE) {
             skip = options.skip_large;
             iterations = options.iterations_large;
         } else {
@@ -159,41 +161,46 @@ int main(int argc, char *argv[])
 
         shmem_barrier_all();
 
-        timer=0;
-        for(i=0; i < iterations + skip ; i++) {
+        timer = 0;
+        for (i = 0; i < iterations + skip; i++) {
             t_start = TIME();
-            if(i%2)
-                shmem_collect32(recvbuff, sendbuff, size, 0, 0, numprocs, pSyncCollect1);
+            if (i % 2)
+                shmem_collect32(recvbuff, sendbuff, size, 0, 0, numprocs,
+                                pSyncCollect1);
             else
-                shmem_collect32(recvbuff, sendbuff, size, 0, 0, numprocs, pSyncCollect2);
+                shmem_collect32(recvbuff, sendbuff, size, 0, 0, numprocs,
+                                pSyncCollect2);
             t_stop = TIME();
 
-            if(i >= skip) {
-                timer+= t_stop-t_start;
+            if (i >= skip) {
+                timer += t_stop - t_start;
             }
             shmem_barrier_all();
         }
 
-        shmem_barrier_all();        
+        shmem_barrier_all();
         latency = (double)(timer * 1.0) / iterations;
 
-        shmem_double_min_to_all(&min_time, &latency, 1, 0, 0, numprocs, pWrk1, pSyncRed1);
-        shmem_double_max_to_all(&max_time, &latency, 1, 0, 0, numprocs, pWrk2, pSyncRed2);
-        shmem_double_sum_to_all(&avg_time, &latency, 1, 0, 0, numprocs, pWrk1, pSyncRed1);
-        avg_time = avg_time/numprocs;
+        shmem_double_min_to_all(&min_time, &latency, 1, 0, 0, numprocs, pWrk1,
+                                pSyncRed1);
+        shmem_double_max_to_all(&max_time, &latency, 1, 0, 0, numprocs, pWrk2,
+                                pSyncRed2);
+        shmem_double_sum_to_all(&avg_time, &latency, 1, 0, 0, numprocs, pWrk1,
+                                pSyncRed1);
+        avg_time = avg_time / numprocs;
 
-        print_data_pgas(rank, full, size*sizeof(uint32_t), avg_time, min_time, max_time, iterations);
+        print_data_pgas(rank, full, size * sizeof(uint32_t), avg_time, min_time,
+                        max_time, iterations);
     }
 
     shmem_barrier_all();
-    
-	
-#ifdef OSHM_1_3     
-	shmem_free(recvbuff);
+
+#ifdef OSHM_1_3
+    shmem_free(recvbuff);
     shmem_free(sendbuff);
     shmem_finalize();
-#else 
-	shfree(recvbuff);
+#else
+    shfree(recvbuff);
     shfree(sendbuff);
 #endif
 

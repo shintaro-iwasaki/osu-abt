@@ -15,9 +15,9 @@ char *s_buf, *r_buf;
 
 static void multi_latency(int rank, int pairs);
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-    int rank, nprocs; 
+    int rank, nprocs;
     int pairs;
     int po_ret = 0;
     options.bench = PT2PT;
@@ -39,17 +39,17 @@ int main(int argc, char* argv[])
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &nprocs));
 
-    pairs = nprocs/2;
+    pairs = nprocs / 2;
 
     if (0 == rank) {
         switch (po_ret) {
             case PO_CUDA_NOT_AVAIL:
                 fprintf(stderr, "CUDA support not enabled.  Please recompile "
-                        "benchmark with CUDA support.\n");
+                                "benchmark with CUDA support.\n");
                 break;
             case PO_OPENACC_NOT_AVAIL:
                 fprintf(stderr, "OPENACC support not enabled.  Please "
-                        "recompile benchmark with OPENACC support.\n");
+                                "recompile benchmark with OPENACC support.\n");
                 break;
             case PO_BAD_USAGE:
                 print_bad_usage_message(rank);
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if(rank == 0) {
+    if (rank == 0) {
         print_header(rank, LAT);
         fflush(stdout);
     }
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     multi_latency(rank, pairs);
-    
+
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
     MPI_CHECK(MPI_Finalize());
@@ -108,18 +108,17 @@ static void multi_latency(int rank, int pairs)
 {
     int size, partner;
     int i;
-    double t_start = 0.0, t_end = 0.0,
-           latency = 0.0, total_lat = 0.0,
+    double t_start = 0.0, t_end = 0.0, latency = 0.0, total_lat = 0.0,
            avg_lat = 0.0;
 
     MPI_Status reqstat;
 
-
-    for(size = options.min_message_size; size <= options.max_message_size; size  = (size ? size * 2 : 1)) {
+    for (size = options.min_message_size; size <= options.max_message_size;
+         size = (size ? size * 2 : 1)) {
 
         MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-        if(size > LARGE_MESSAGE_SIZE) {
+        if (size > LARGE_MESSAGE_SIZE) {
             options.iterations = options.iterations_large;
             options.skip = options.skip_large;
         } else {
@@ -137,9 +136,10 @@ static void multi_latency(int rank, int pairs)
                     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
                 }
 
-                MPI_CHECK(MPI_Send(s_buf, size, MPI_CHAR, partner, 1, MPI_COMM_WORLD));
-                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, partner, 1, MPI_COMM_WORLD,
-                         &reqstat));
+                MPI_CHECK(MPI_Send(s_buf, size, MPI_CHAR, partner, 1,
+                                   MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, partner, 1,
+                                   MPI_COMM_WORLD, &reqstat));
             }
 
             t_end = MPI_Wtime();
@@ -154,9 +154,10 @@ static void multi_latency(int rank, int pairs)
                     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
                 }
 
-                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, partner, 1, MPI_COMM_WORLD,
-                         &reqstat));
-                MPI_CHECK(MPI_Send(s_buf, size, MPI_CHAR, partner, 1, MPI_COMM_WORLD));
+                MPI_CHECK(MPI_Recv(r_buf, size, MPI_CHAR, partner, 1,
+                                   MPI_COMM_WORLD, &reqstat));
+                MPI_CHECK(MPI_Send(s_buf, size, MPI_CHAR, partner, 1,
+                                   MPI_COMM_WORLD));
             }
 
             t_end = MPI_Wtime();
@@ -165,11 +166,11 @@ static void multi_latency(int rank, int pairs)
         latency = (t_end - t_start) * 1.0e6 / (2.0 * options.iterations);
 
         MPI_CHECK(MPI_Reduce(&latency, &total_lat, 1, MPI_DOUBLE, MPI_SUM, 0,
-                   MPI_COMM_WORLD));
+                             MPI_COMM_WORLD));
 
-        avg_lat = total_lat/(double) (pairs * 2);
+        avg_lat = total_lat / (double)(pairs * 2);
 
-        if(0 == rank) {
+        if (0 == rank) {
             fprintf(stdout, "%-*d%*.*f\n", 10, size, FIELD_WIDTH,
                     FLOAT_PRECISION, avg_lat);
             fflush(stdout);
