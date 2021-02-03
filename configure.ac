@@ -33,6 +33,13 @@ AC_ARG_ENABLE([cuda],
               [],
               [enable_cuda=no])
 
+AC_ARG_ENABLE([argobots],
+              [AS_HELP_STRING([--enable-argobots],
+            [Enable Argobots.])
+              ],
+              [],
+              [enable_argobots=no])
+
 AC_ARG_WITH([cuda],
             [AS_HELP_STRING([--with-cuda=@<:@CUDA installation path@:>@],
                             [Provide path to CUDA installation])
@@ -41,6 +48,17 @@ AC_ARG_WITH([cuda],
                      [yes|no], [],
                      [CPPFLAGS="-I$with_cuda/include $CPPFLAGS"
                       LDFLAGS="-L$with_cuda/lib64 -Wl,-rpath=$with_cuda/lib64 -L$with_cuda/lib -Wl,-rpath=$with_cuda/lib $LDFLAGS"])
+            ])
+
+AC_ARG_WITH([argobots],
+            [AS_HELP_STRING([--with-argobots=@<:@Argobots installation path@:>@],
+                            [Provide path to Argobots installation])
+            ],
+            [AS_CASE([$with_argobots],
+                     [yes|no], [],
+                     [CFLAGS="-DOSU_USE_ARGOBOTS -I$with_argobots/include $CFLAGS"
+                      CPPFLAGS="-DOSU_USE_ARGOBOTS -I$with_argobots/include $CPPFLAGS"
+                      LDFLAGS="-L$with_argobots/lib -Wl,-rpath=$with_argobots/lib -labt $LDFLAGS"])
             ])
 
 AC_ARG_WITH([cuda-include],
