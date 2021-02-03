@@ -11,6 +11,8 @@
 
 #include <osu_util_mpi.h>
 
+#ifndef OSU_USE_ARGOBOTS
+
 typedef pthread_mutex_t thread_mutex_t;
 typedef pthread_cond_t thread_cond_t;
 typedef pthread_barrier_t thread_barrier_t;
@@ -78,6 +80,151 @@ int thread_barrier_wait(thread_barrier_t *barrier)
 {
     return pthread_barrier_wait(barrier);
 }
+
+#else
+
+#include <abt.h>
+
+typedef ABT_mutex thread_mutex_t;
+typedef ABT_cond thread_cond_t;
+typedef ABT_barrier thread_barrier_t;
+typedef ABT_thread thread_t;
+
+int g_num_xstreams;
+static ABT_xstream *g_xstreams;
+static ABT_sched *g_scheds;
+static ABT_pool *g_pools;
+
+void init_thread()
+{
+    int i, j;
+
+    ABT_init(0, NULL);
+
+    const char *num_xstreams_env = getenv("ABT_NUM_XSTREAMS");
+    g_num_xstreams = num_xstreams_env ? atoi(num_xstreams_env) : 0;
+    if (g_num_xstreams <= 0)
+        g_num_xstreams = 1;
+
+    g_xstreams = (ABT_xstream *)malloc(sizeof(ABT_xstream) * g_num_xstreams);
+    g_scheds = (ABT_sched *)malloc(sizeof(ABT_sched) * g_num_xstreams);
+    g_pools = (ABT_pool *)malloc(sizeof(ABT_pool) * g_num_xstreams);
+
+    /* Create pools. */
+    for (i = 0; i < g_num_xstreams; i++) {
+        ABT_pool_create_basic(ABT_POOL_FIFO, ABT_POOL_ACCESS_MPMC, ABT_TRUE,
+                              &g_pools[i]);
+    }
+
+    /* Create schedulers. */
+    for (i = 0; i < g_num_xstreams; i++) {
+        ABT_pool *tmp = (ABT_pool *)malloc(sizeof(ABT_pool) * g_num_xstreams);
+        for (j = 0; j < g_num_xstreams; j++) {
+            tmp[j] = g_pools[(i + j) % g_num_xstreams];
+        }
+        ABT_sched_create_basic(ABT_SCHED_RANDWS, g_num_xstreams, tmp,
+                               ABT_SCHED_CONFIG_NULL, &g_scheds[i]);
+        free(tmp);
+    }
+
+    /* Set up a primary execution stream. */
+    ABT_xstream_self(&g_xstreams[0]);
+    ABT_xstream_set_main_sched(g_xstreams[0], g_scheds[0]);
+
+    /* Create secondary execution streams. */
+    for (i = 1; i < g_num_xstreams; i++) {
+        ABT_xstream_create(g_scheds[i], &g_xstreams[i]);
+    }
+}
+
+void finalize_thread()
+{
+    /* FIXME: memory is leaked. */
+}
+
+int thread_mutex_init(thread_mutex_t *mutex, const void *attr)
+{
+    /* FIXME: recursive configuration is ignored. */
+    return ABT_mutex_create(mutex);
+}
+
+int thread_cond_init(thread_cond_t *cond, const void *attr)
+{
+    return ABT_cond_create(cond);
+}
+
+int thread_barrier_init(thread_barrier_t *barrier, const void *attr,
+                        unsigned count)
+{
+    return ABT_barrier_create(count, barrier);
+}
+
+typedef struct {
+    void *(*start_routine)(void *);
+    void *arg;
+    void *retval;
+} thread_wrapper_t;
+
+void thread_wrapper(void *arg)
+{
+    thread_wrapper_t *args = (thread_wrapper_t *)arg;
+    args->retval = args->start_routine(args->arg);
+}
+
+int thread_create(thread_t *thread, const void *attr,
+                  void *(*start_routine)(void *), void *arg)
+{
+    int rank;
+    thread_wrapper_t *wrapper_arg =
+        (thread_wrapper_t *)malloc(sizeof(thread_wrapper_t));
+    wrapper_arg->start_routine = start_routine;
+    wrapper_arg->arg = arg;
+    wrapper_arg->retval = NULL;
+
+    ABT_xstream_self_rank(&rank);
+    return ABT_thread_create(g_pools[rank], thread_wrapper, wrapper_arg,
+                             ABT_THREAD_ATTR_NULL, thread);
+}
+
+int thread_join(thread_t thread, void **retval)
+{
+    thread_wrapper_t *wrapper_arg;
+    ABT_thread_get_arg(thread, (void **)&wrapper_arg);
+    int ret = ABT_thread_free(&thread);
+    if (ret != ABT_SUCCESS)
+        return ret;
+    if (retval)
+        *retval = wrapper_arg->retval;
+    free(wrapper_arg);
+    return ret;
+}
+
+int thread_mutex_lock(thread_mutex_t *mutex)
+{
+    return ABT_mutex_lock(*mutex);
+}
+
+int thread_mutex_unlock(thread_mutex_t *mutex)
+{
+    return ABT_mutex_unlock(*mutex);
+}
+
+int thread_cond_broadcast(thread_cond_t *cond)
+{
+    return ABT_cond_broadcast(*cond);
+}
+
+int thread_cond_wait(thread_cond_t *cond, thread_mutex_t *mutex)
+{
+    return ABT_cond_wait(*cond, *mutex);
+}
+
+int thread_barrier_wait(thread_barrier_t *barrier)
+{
+    return ABT_barrier_wait(*barrier);
+}
+
+#endif
 
 thread_mutex_t finished_size_mutex;
 thread_cond_t finished_size_cond;
