@@ -5,6 +5,8 @@ AC_PREREQ([2.59])
 AC_INIT([OSU-Micro-Benchmarks], [5.7], [mvapich-discuss@cse.ohio-state.edu])
 AC_CONFIG_SRCDIR([mpi/pt2pt/osu_latency.c])
 
+AC_CONFIG_MACRO_DIRS([m4])
+
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT
 

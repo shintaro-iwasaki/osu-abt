@@ -4,7 +4,16 @@
 *Makefile
 *.deps
 *.dirstamp
+*Makefile.in
+m4
+ltmain.sh
+COPYING
+INSTALL
+compile
 libtool
+aclocal.m4
+autom4te.cache
+configure
 mpi/collective/osu_allgather
 mpi/collective/osu_allgatherv
 mpi/collective/osu_allreduce
