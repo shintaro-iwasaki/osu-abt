@@ -293,7 +293,7 @@ void enable_accel_support(void);
 
 #define DEF_NUM_THREADS 2
 #define MIN_NUM_THREADS 1
-#define MAX_NUM_THREADS 128
+#define MAX_NUM_THREADS 1030 /* a bit larger than 1024 */
 
 #define DEF_NUM_PROCESSES 2
 #define MIN_NUM_PROCESSES 1

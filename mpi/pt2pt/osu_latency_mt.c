@@ -252,8 +252,8 @@ int main(int argc, char *argv[])
     int numprocs = 0, provided = 0, myid = 0, err = 0;
     int i = 0;
     int po_ret = 0;
-    thread_t sr_threads[MAX_NUM_THREADS];
-    thread_tag_t tags[MAX_NUM_THREADS];
+    thread_t *sr_threads = (thread_t *)malloc(sizeof(thread_t) * MAX_NUM_THREADS);
+    thread_tag_t *tags = (thread_tag_t *)malloc(sizeof(thread_tag_t) * MAX_NUM_THREADS);
 
     thread_mutex_init(&finished_size_mutex, NULL);
     thread_cond_init(&finished_size_cond, NULL);
